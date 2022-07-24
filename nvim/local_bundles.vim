@@ -1,1 +1,5 @@
-/home/cesar/.config/nvim/local_bundles.vim
+" LSP settings plugin 
+Plug 'mattn/vim-lsp-settings'
+
+" Vim LSP + ALE
+Plug 'rhysd/vim-lsp-ale'
