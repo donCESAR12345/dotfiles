@@ -1,0 +1,1 @@
+/home/cesar/.config/nvim/local_bundles.vim
