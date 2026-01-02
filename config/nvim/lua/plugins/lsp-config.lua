@@ -36,6 +36,7 @@ local plugins = {
 				"gdscript", -- GodotScript
 				"groovyls", -- Groovy
 				"html", -- HTML
+				"pyright", -- Python
 				"ruff", -- Python
 				"lua_ls", -- Lua
 				-- "qml_lsp",                -- QML
@@ -64,7 +65,7 @@ local plugins = {
 		opts = {
 			formatters_by_ft = {
 				-- Lua
-				lua = { "stylua" },
+				lua = { "stylua", "luacheck" },
 				-- Python
 				python = { "ruff_format", "black" },
 				-- Web
@@ -75,8 +76,9 @@ local plugins = {
 				typescriptreact = { "prettierd" },
 				json = { "prettierd" },
 				-- Shell
-				sh = { "shfmt" },
-				bash = { "shfmt" },
+				sh = { "shfmt", "shellcheck" },
+				bash = { "shfmt", "shellcheck" },
+				zsh = { "shfmt", "shellcheck" },
 				-- C/C++
 				c = { "clang_format" },
 				cpp = { "clang_format" },
