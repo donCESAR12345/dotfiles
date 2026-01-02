@@ -58,6 +58,7 @@ export ANSIBLE_HOME="$XDG_CONFIG_HOME/ansible"
 export _JAVA_OPTIONS="-Djava.util.prefs.userRoot=$XDG_CONFIG_HOME/java -Dawt.useSystemAAFontSettings=on"
 export WINEPREFIX="$XDG_DATA_HOME/wine"
 export VAGRANT_HOME="$XDG_DATA_HOME/vagrant"
+export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
 
 # ==============================================================================
 # 8. PRIVACY, TELEMETRY & NETWORKING
