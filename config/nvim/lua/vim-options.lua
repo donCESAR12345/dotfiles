@@ -22,8 +22,8 @@ opt.cc = "80"
 opt.mouse:append("a")
 
 -- Key mappings for clipboard operations
-vim.api.nvim_set_keymap("c", "<C-V>", "<C-r>+", { noremap = true, silent = true }) -- Paste in command mode
-vim.api.nvim_set_keymap("i", "<C-V>", '<C-r>+', { noremap = true, silent = true }) -- Paste in insert mode
+vim.keymap.set({ "c" }, "<C-V>", "<C-r>+", { noremap = true, silent = true, desc = "Paste in command mode" }) -- Paste in command mode
+vim.keymap.set({ "i" }, "<C-V>", "<C-r>+", { noremap = true, silent = true, desc = "Paste in insert mode" }) -- Paste in insert mode
 
 g.mapleader = " "
 

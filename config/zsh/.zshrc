@@ -106,11 +106,6 @@ alias fix-spotify="sudo chmod a+wr /var/lib/flatpak/app/com.spotify.Client/x86_6
 # ==============================================================================
 # 6. CUSTOM FUNCTIONS
 # ==============================================================================
-# Google Cloud / Jupyter
-# gcloud_jupyter_get_ip() {
-#     export JUPYTER_CESITAR_IP=$(gcloud compute instances list --project "$GCLOUD_JUPYTER_PROJECT_ID" | awk '/jupyter-cesitar-mega/ { print $5 }')
-#     echo $JUPYTER_CESITAR_IP
-# }
 
 # Bibshiny
 bibshiny() {
@@ -119,9 +114,6 @@ bibshiny() {
 }
 
 # ==============================================================================
-# 7. LANGUAGES INIT (CONDA, ETC)
+# 7. INITIALIZATIONS
 # ==============================================================================
-CONDA_PATH="$XDG_DATA_HOME/miniconda3"
-if [ -f "$CONDA_PATH/bin/conda" ]; then
-    eval "$($CONDA_PATH/bin/conda 'shell.zsh' 'hook' 2> /dev/null)"
-fi
+eval "$(fnm env --use-on-cd --shell zsh)"

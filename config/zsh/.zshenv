@@ -27,21 +27,28 @@ export HISTDUP=erase
 export KEYTIMEOUT=1 
 
 # ==============================================================================
-# 4. DEVELOPMENT: RUNTIMES & PACKAGES (Rust, Python, Node, Go)
+# 4. DEVELOPMENT: RUNTIMES & PACKAGES
 # ==============================================================================
+# Rust
 export CARGO_HOME="$XDG_DATA_HOME/cargo"
 export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
+# Go
 export GOPATH="$XDG_DATA_HOME/go"
+# Python
 export UV_PYTHON_INSTALL_DIR="$XDG_DATA_HOME/uv/python"
 export UV_TOOL_DIR="$XDG_DATA_HOME/uv/tools"
 export UV_TOOL_BIN_DIR="$XDG_BIN_HOME"
+# Node
 export PNPM_HOME="$XDG_DATA_HOME/pnpm"
-export NVM_DIR="$XDG_CONFIG_HOME/nvm"
+export PNPM_STORE_PATH="$PNPM_HOME/store"
+export FNM_DIR="$XDG_DATA_HOME/fnm"
+export FNM_MULTISHELL_PATH="$XDG_STATE_HOME/fnm/multishell"
+export FNM_LOGLEVEL="error"
+export FNM_COREPACK_ENABLED="true"
 
 # ==============================================================================
-# 5. DEVELOPMENT: DATA SCIENCE & AI (Python, Jupyter, CUDA)
+# 5. DEVELOPMENT: DATA SCIENCE & AI
 # ==============================================================================
-export CONDA_ENVS="$HOME/.conda/envs"
 export IPYTHONDIR="$XDG_CONFIG_HOME/ipython"
 export JUPYTER_CONFIG_DIR="$XDG_CONFIG_HOME/jupyter"
 export KERAS_HOME="$XDG_STATE_HOME/keras"
@@ -88,6 +95,7 @@ path=(
     "$CARGO_HOME/bin"
     "$GOPATH/bin"
     "$PNPM_HOME"
+    "$FNM_DIR"
     $path
 )
 fpath=("$XDG_DATA_HOME/zsh/completions" $fpath)

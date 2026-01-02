@@ -48,46 +48,62 @@ local plugins = {
 				-- Lua
 				if server == "lua_ls" then
 					local specific_config = require("lsp-config.lua_ls").config()
-                    vim.lsp.config(server, specific_config)
+					vim.lsp.config(server, specific_config)
 				else
-                    vim.lsp.config(server, default_config)
+					vim.lsp.config(server, default_config)
 				end
-                vim.lsp.enable(server)
+				vim.lsp.enable(server)
 			end
 		end,
 	},
 
-	-- None LS
+	-- Conform
 	{
-		"nvimtools/none-ls.nvim",
-		config = function()
-			local null_ls = require("null-ls")
-			null_ls.setup({
-				sources = {
-					-- Code actions
-					null_ls.builtins.code_actions.refactoring,
-
-					-- Diagnostics
-					null_ls.builtins.diagnostics.rpmspec,
-					null_ls.builtins.diagnostics.npm_groovy_lint,
-					null_ls.builtins.diagnostics.terraform_validate,
-					-- null_ls.builtins.diagnostics.pylint,
-					-- null_ls.builtins.diagnostics.ruff,
-
-					-- Formatting
-					-- null_ls.builtins.formatting.usort,
-					-- null_ls.builtins.formatting.ruff,
-					-- null_ls.builtins.formatting.latexindent,
-					-- null_ls.builtins.formatting.beautysh,
-					null_ls.builtins.formatting.clang_format,
-					null_ls.builtins.formatting.djlint,
-					null_ls.builtins.formatting.npm_groovy_lint,
-                    null_ls.builtins.formatting.packer,
-                    null_ls.builtins.formatting.terraform_fmt,
-					null_ls.builtins.formatting.stylua,
-					null_ls.builtins.formatting.prettierd,
-					null_ls.builtins.formatting.phpcsfixer,
-				},
+		"stevearc/conform.nvim",
+		lazy = false,
+		opts = {
+			formatters_by_ft = {
+				-- Lua
+				lua = { "stylua" },
+				-- Python
+				python = { "ruff_format", "black" },
+				-- Web
+				html = { "djlint" },
+				css = { "prettierd" },
+				javascript = { "prettierd" },
+				typescript = { "prettierd" },
+				typescriptreact = { "prettierd" },
+				json = { "prettierd" },
+				-- Shell
+				sh = { "shfmt" },
+				bash = { "shfmt" },
+				-- C/C++
+				c = { "clang_format" },
+				cpp = { "clang_format" },
+				-- GoDot
+				gdscript = { "gdformat" },
+				-- Groovy
+				groovy = { "npm_groovy_lint" },
+				-- Terraform
+				terraform = { "terraform_fmt" },
+				-- PHP
+				php = { "phpcsfixer" },
+			},
+			format_on_save = {
+				lsp_fallback = true,
+				async = false,
+				timeout_ms = 1000,
+			},
+		},
+		init = function()
+			-- If you want the formatexpr, make the following change
+			-- vim.o.formatexpr = "v:lua.require'conform'.formatexpr()"
+			-- conform will run once before saving
+			vim.api.nvim_create_autocmd({ "BufWritePre" }, {
+				group = vim.api.nvim_create_augroup("ConformFormat", { clear = true }),
+				callback = function(args)
+					require("conform").format({ bufnr = args.buf })
+				end,
 			})
 		end,
 	},
