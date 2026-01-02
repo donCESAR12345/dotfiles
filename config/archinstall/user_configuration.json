@@ -1,0 +1,82 @@
+{
+    "app_config": {
+        "audio_config": {
+            "audio": "pipewire"
+        },
+        "bluetooth_config": {
+            "enabled": true
+        },
+        "power_management_config": {
+            "power_management": "power-profiles-daemon"
+        },
+        "print_service_config": {
+            "enabled": true
+        }
+    },
+    "archinstall-language": "English",
+    "auth_config": null,
+    "bootloader_config": {
+        "bootloader": "Systemd-boot",
+        "removable": false,
+        "uki": true
+    },
+    "custom_commands": [],
+    "hostname": "archlinux",
+    "kernels": [
+        "linux"
+    ],
+    "locale_config": {
+        "kb_layout": "la-latin1",
+        "sys_enc": "UTF-8",
+        "sys_lang": "en_US.UTF-8"
+    },
+    "mirror_config": {
+        "custom_repositories": [],
+        "custom_servers": [],
+        "mirror_regions": {},
+        "optional_repositories": []
+    },
+    "network_config": {
+        "type": "nm"
+    },
+    "ntp": true,
+    "packages": [
+        "base-devel",
+        "bat",
+        "btop",
+        "dust",
+        "eza",
+        "fd",
+        "git",
+        "keepassxc",
+        "neovim",
+        "ripgrep",
+        "stow",
+        "uv",
+        "zoxide",
+        "zsh",
+        "starship"
+    ],
+    "parallel_downloads": 0,
+    "profile_config": {
+        "gfx_driver": "All open-source",
+        "greeter": "sddm",
+        "profile": {
+            "custom_settings": {
+                "KDE Plasma": {}
+            },
+            "details": [
+                "KDE Plasma"
+            ],
+            "main": "Desktop"
+        }
+    },
+    "script": null,
+    "services": [],
+    "swap": {
+        "algorithm": "zstd",
+        "enabled": true
+    },
+    "timezone": "UTC",
+    "version": "3.0.15"
+}
