@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Si el agente ya tiene llaves, no hacemos nada y saltamos al comando
+if ! ssh-add -l &> /dev/null; then
+    echo "🔐 SSH Agent vacío. Invocando KeePassXC..."
+    keepassxc &> /dev/null & disown
+    until ssh-add -l &> /dev/null
+    do
+        sleep 1
+    done
+    echo "✅ Llaves inyectadas."
+fi
+
+# Ejecutar el comando original (nc, git, ssh, etc)
+exec /usr/bin/nc "$1" "$2"
