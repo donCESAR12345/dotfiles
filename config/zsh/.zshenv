@@ -3,6 +3,7 @@
 # ==============================================================================
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_BIN_HOME="$HOME/.local/bin"
 export XDG_STATE_HOME="$HOME/.local/state"
 export XDG_CACHE_HOME="$HOME/.cache"
 export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
@@ -31,7 +32,9 @@ export KEYTIMEOUT=1
 export CARGO_HOME="$XDG_DATA_HOME/cargo"
 export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
 export GOPATH="$XDG_DATA_HOME/go"
-export PYENV_ROOT="$XDG_DATA_HOME/pyenv"
+export UV_PYTHON_INSTALL_DIR="$XDG_DATA_HOME/uv/python"
+export UV_TOOL_DIR="$XDG_DATA_HOME/uv/tools"
+export UV_TOOL_BIN_DIR="$XDG_BIN_HOME"
 export PNPM_HOME="$XDG_DATA_HOME/pnpm"
 export NVM_DIR="$XDG_CONFIG_HOME/nvm"
 
@@ -81,12 +84,10 @@ export QT_QPA_PLATFORM="wayland;xcb"
 # ==============================================================================
 typeset -U path fpath
 path=(
+    "$XDG_BIN_HOME"
     "$CARGO_HOME/bin"
-    "$XDG_DATA_HOME/bin"
-    "$HOME/.local/bin"
-    "$PYENV_ROOT/bin"
-    "$PNPM_HOME"
     "$GOPATH/bin"
+    "$PNPM_HOME"
     $path
 )
 fpath=("$XDG_DATA_HOME/zsh/completions" $fpath)
