@@ -92,6 +92,9 @@ alias zj="zellij"
 alias cwd="pwd | wl-copy"
 alias ezsh="nvim $ZDOTDIR/.zshrc"
 alias esenv="nvim $HOME/.zshenv"
+alias fw-status="sudo firewall-cmd --get-active-zones"
+alias fw-home="sudo firewall-cmd --set-default-zone=home"
+alias fw-public="sudo firewall-cmd --set-default-zone=public"
 
 # Safety net
 alias rm='rm -I --preserve-root'
@@ -101,7 +104,7 @@ alias ln='ln -i'
 
 # Specific maintenance
 alias tpm-regen="sudo systemd-cryptenroll /dev/nvme0n1p6 --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=0,2,4,7,8,9"
-alias fix-spotify="sudo chmod a+wr /var/lib/flatpak/app/com.spotify.Client/x86_64/stable/active/files/extra/share/spotify; sudo chmod a+wr -R /var/lib/flatpak/app/com.spotify.Client/x86_64/stable/active/files/extra/share/spotify/Apps/; spicetify backup apply"
+alias fix-spotify="sudo chmod a+wr /opt/spotify/; sudo chmod a+wr -R /opt/spotify/Apps/; spicetify backup apply"
 
 # ==============================================================================
 # 6. CUSTOM FUNCTIONS
