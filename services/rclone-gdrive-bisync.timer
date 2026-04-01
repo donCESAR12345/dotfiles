@@ -1,0 +1,10 @@
+[Unit]
+Description=Rclone bisync timer
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
