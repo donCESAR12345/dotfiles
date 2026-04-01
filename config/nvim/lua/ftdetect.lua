@@ -1,10 +1,12 @@
 local M = {}
 
 M.setup = function()
-	-- Add filetype detection for .ipynb files
 	vim.filetype.add({
 		extension = {
-			ipynb = "ipynb", -- Map .ipynb extension to 'ipynb' filetype
+			-- Jupyter notebooks
+			ipynb = "ipynb",
+			-- Terraform variable files (required for terraformls)
+			tfvars = "terraform-vars",
 		},
 	})
 end

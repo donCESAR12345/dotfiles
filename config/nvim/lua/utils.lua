@@ -1,45 +1,36 @@
 local M = {}
 
--- Function to execute a command in a toggleterm instance
+-- Run a shell command in a named floating toggleterm instance
 M.run_in_toggleterm = function(command, name, dir_path)
-	local toggleterm = require("toggleterm.terminal")
-	dir_path = dir_path or vim.fn.getcwd() -- Use current working directory if not specified
+	local Terminal = require("toggleterm.terminal").Terminal
 
-	toggleterm.open({
-		dir = dir_path,
+	local term = Terminal:new({
+		cmd = command,
+		dir = dir_path or vim.fn.getcwd(),
+		name = name or "helper_term",
+		direction = "float",
 		float_opts = {
 			border = "curved",
 		},
-		hidden = true, -- Start hidden, open when needed
-		name = name or "helper_term",
+		hidden = true,
 	})
 
-	-- Send command to the terminal instance
-	-- Use `vim.api.nvim_exec_lua` to ensure commands are executed correctly in Lua context
-	vim.api.nvim_exec_lua(
-		string.format('require("toggleterm.util").send_command(%q, %q)', name or "helper_term", command),
-		false
-	)
-
-	-- Open the terminal window after sending the command
-	vim.cmd(string.format("ToggleTerm name=%s direction=float", name or "helper_term"))
+	term:toggle()
 end
 
--- Specific commands for Python development
+-- Python development helpers
 M.dev = {
 	install_deps = function()
-		local cmd = "pip install -r requirements.txt"
-		M.run_in_toggleterm(cmd, "python_dev_term", vim.fn.getcwd())
+		M.run_in_toggleterm("pip install -r requirements.txt", "python_dev_term")
 	end,
+
 	run_script = function(script_name)
-		local cmd = "python " .. script_name
-		M.run_in_toggleterm(cmd, "python_dev_term", vim.fn.getcwd())
+		M.run_in_toggleterm("python " .. script_name, "python_dev_term")
 	end,
+
+	-- Activate the local .venv and confirm the Python version
 	setup_venv = function()
-		-- Assumes venv is created with 'python -m venv .venv' or similar
-		-- This command might need adjustment based on your venv creation method
-		local cmd = ". .venv/bin/activate && python --version"
-		M.run_in_toggleterm(cmd, "python_dev_term", vim.fn.getcwd())
+		M.run_in_toggleterm(". .venv/bin/activate && python --version", "python_dev_term")
 	end,
 }
 

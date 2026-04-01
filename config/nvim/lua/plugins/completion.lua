@@ -1,45 +1,75 @@
 local plugins = {
-	-- LuaSnip
+	-- Snippet engine
 	{
 		"L3MON4D3/LuaSnip",
 		lazy = false,
 		dependencies = {
-			"rafamadriz/friendly-snippets",
-			"saadparwaiz1/cmp_luasnip",
+			"rafamadriz/friendly-snippets", -- Community snippet collection
+			"saadparwaiz1/cmp_luasnip", -- cmp source for LuaSnip
 		},
 		config = function()
 			require("luasnip.loaders.from_vscode").lazy_load()
 		end,
 	},
 
-	-- Completion with LSP
+	-- cmp sources
+	{ "hrsh7th/cmp-nvim-lsp" },
+	{ "hrsh7th/cmp-path" },
+
+	-- AI completion (Windsurf / Codeium)
 	{
-		"hrsh7th/cmp-nvim-lsp",
-		lazy = false,
-		config = true,
+		"Exafunction/windsurf.vim",
+		event = "BufEnter",
 	},
 
-	{
-		"hrsh7th/cmp-path",
-	},
-
-	-- Completion using AI
-	{
-		"Exafunction/codeium.nvim",
-		dependencies = {
-			"nvim-lua/plenary.nvim",
-			"hrsh7th/nvim-cmp",
-		},
-		config = function()
-			require("codeium").setup({})
-		end,
-	},
-
-	-- Nvim completion
+	-- Completion engine
 	{
 		"hrsh7th/nvim-cmp",
 		lazy = false,
 		config = function()
+			local luasnip = require("luasnip")
+			local cmp = require("cmp")
+
+			-- Icons per LSP completion kind
+			local kind_icons = {
+				Text = "󰉿",
+				Method = "󰆧",
+				Function = "󰊕",
+				Constructor = "",
+				Field = "󰜢",
+				Variable = "󰀫",
+				Class = "󰠱",
+				Interface = "",
+				Module = "",
+				Property = "󰜢",
+				Unit = "󰑭",
+				Value = "󰎠",
+				Enum = "",
+				Keyword = "󰌋",
+				Snippet = "",
+				Color = "󰏘",
+				File = "󰈙",
+				Reference = "󰈇",
+				Folder = "󰉋",
+				EnumMember = "",
+				Constant = "󰏿",
+				Struct = "󰙅",
+				Event = "",
+				Operator = "󰆕",
+				TypeParameter = "",
+				Codeium = "",
+			}
+
+			-- Source labels shown on the right of each item
+			local source_labels = {
+				codeium = "[AI]",
+				luasnip = "[Snip]",
+				nvim_lsp = "[LSP]",
+				path = "[Path]",
+				buffer = "[Buf]",
+			}
+
+			-- Only trigger completion when there's a real word before the cursor
 			local has_words_before = function()
 				unpack = unpack or table.unpack
 				local line, col = unpack(vim.api.nvim_win_get_cursor(0))
@@ -47,19 +77,28 @@ local plugins = {
 					and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
 			end
 
-			local luasnip = require("luasnip")
-			local cmp = require("cmp")
 			cmp.setup({
 				snippet = {
 					expand = function(args)
-						require("luasnip").lsp_expand(args.body)
+						luasnip.lsp_expand(args.body)
 					end,
 				},
 				window = {
-					documentation = cmp.config.window.bordered(),
 					completion = cmp.config.window.bordered(),
+					documentation = cmp.config.window.bordered(),
 				},
+
+				-- Built-in formatting — no external plugin needed
+				formatting = {
+					format = function(entry, vim_item)
+						vim_item.kind = string.format("%s %s", kind_icons[vim_item.kind] or "", vim_item.kind)
+						vim_item.menu = source_labels[entry.source.name] or ""
+						return vim_item
+					end,
+				},
+
 				mapping = cmp.mapping.preset.insert({
+					-- Tab: cycle completions or expand/jump snippets
 					["<Tab>"] = cmp.mapping(function(fallback)
 						if cmp.visible() then
 							cmp.select_next_item()
@@ -81,10 +120,13 @@ local plugins = {
 							fallback()
 						end
 					end, { "i", "s" }),
+
 					["<C-b>"] = cmp.mapping.scroll_docs(-4),
 					["<C-f>"] = cmp.mapping.scroll_docs(4),
 					["<C-Space>"] = cmp.mapping.complete(),
 					["<C-e>"] = cmp.mapping.abort(),
+
+					-- Confirm only if an item is explicitly selected
 					["<CR>"] = cmp.mapping({
 						i = function(fallback)
 							if cmp.visible() and cmp.get_active_entry() then
@@ -97,13 +139,14 @@ local plugins = {
 						c = cmp.mapping.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true }),
 					}),
 				}),
+
 				sources = cmp.config.sources({
-					{ name = "codeium" },
+					{ name = "codeium" }, -- AI suggestions first
 					{ name = "luasnip" },
 					{ name = "nvim_lsp" },
 					{ name = "path" },
 				}, {
-					{ name = "buffer" },
+					{ name = "buffer" }, -- Fallback: words in current buffer
 				}),
 			})
 		end,

@@ -1,5 +1,5 @@
 local plugins = {
-	-- Mason
+	-- Mason: install and manage LSPs, linters, and formatters
 	{
 		"williamboman/mason.nvim",
 		lazy = false,
@@ -8,7 +8,7 @@ local plugins = {
 		end,
 	},
 
-	-- Mason with LSP
+	-- Bridge between mason and nvim-lspconfig (auto-installs LSP servers)
 	{
 		"williamboman/mason-lspconfig.nvim",
 		lazy = false,
@@ -17,37 +17,44 @@ local plugins = {
 		},
 	},
 
-	-- LSP Config
+	-- Bridge between mason and conform (auto-installs formatters)
+	{
+		"zapling/mason-conform.nvim",
+		lazy = false,
+		config = function()
+			require("mason-conform").setup()
+		end,
+	},
+
+	-- LSP client configuration
 	{
 		"neovim/nvim-lspconfig",
 		lazy = false,
 		config = function()
 			local capabilities = require("cmp_nvim_lsp").default_capabilities()
 			capabilities.textDocument.completion.completionItem.snippetSupport = true
+
+			-- Force UTF-8 encoding on all servers to avoid position encoding
+			-- conflicts when multiple LSPs attach to the same buffer (e.g. pyright + ruff)
 			local default_config = {
 				capabilities = capabilities,
+				positionEncodings = { "utf-8" },
 			}
 
 			local servers = {
 				"ansiblels", -- Ansible
-				"bashls", -- Shell
-				"clangd", -- C/C++
+				"bashls", -- Bash / Shell
 				"dockerls", -- Docker
-				"gdscript", -- GodotScript
-				"groovyls", -- Groovy
-				"html", -- HTML
-				"pyright", -- Python
-				"ruff", -- Python
+				"pyright", -- Python (type checking)
+				"ruff", -- Python (linting + formatting)
 				"lua_ls", -- Lua
-				-- "qml_lsp",                -- QML
-				"rust_analyzer", -- Rust
-				"ts_ls", -- Typescript/Javascript
+				"terraformls", -- Terraform
+				"ts_ls", -- TypeScript / JavaScript
 			}
 
-			-- Default config
 			for _, server in ipairs(servers) do
-				-- Lua
 				if server == "lua_ls" then
+					-- lua_ls needs Neovim-specific workspace configuration
 					local specific_config = require("lsp-config.lua_ls").config()
 					vim.lsp.config(server, specific_config)
 				else
@@ -58,38 +65,24 @@ local plugins = {
 		end,
 	},
 
-	-- Conform
+	-- Formatter (auto-format on save via format_on_save option)
 	{
 		"stevearc/conform.nvim",
 		lazy = false,
 		opts = {
 			formatters_by_ft = {
-				-- Lua
-				lua = { "stylua", "luacheck" },
-				-- Python
+				lua = { "stylua" },
 				python = { "ruff_format", "black" },
-				-- Web
 				html = { "djlint" },
 				css = { "prettierd" },
 				javascript = { "prettierd" },
 				typescript = { "prettierd" },
 				typescriptreact = { "prettierd" },
 				json = { "prettierd" },
-				-- Shell
 				sh = { "shfmt", "shellcheck" },
 				bash = { "shfmt", "shellcheck" },
 				zsh = { "shfmt", "shellcheck" },
-				-- C/C++
-				c = { "clang_format" },
-				cpp = { "clang_format" },
-				-- GoDot
-				gdscript = { "gdformat" },
-				-- Groovy
-				groovy = { "npm_groovy_lint" },
-				-- Terraform
 				terraform = { "terraform_fmt" },
-				-- PHP
-				php = { "phpcsfixer" },
 			},
 			format_on_save = {
 				lsp_fallback = true,
@@ -97,17 +90,6 @@ local plugins = {
 				timeout_ms = 1000,
 			},
 		},
-		init = function()
-			-- If you want the formatexpr, make the following change
-			-- vim.o.formatexpr = "v:lua.require'conform'.formatexpr()"
-			-- conform will run once before saving
-			vim.api.nvim_create_autocmd({ "BufWritePre" }, {
-				group = vim.api.nvim_create_augroup("ConformFormat", { clear = true }),
-				callback = function(args)
-					require("conform").format({ bufnr = args.buf })
-				end,
-			})
-		end,
 	},
 }
 

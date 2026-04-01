@@ -1,61 +1,29 @@
 local plugins = {
-	-- Neotest
+	-- Test runner UI — keymaps are defined in keymaps.lua (M.testing)
 	{
 		"nvim-neotest/neotest",
 		dependencies = {
 			"nvim-lua/plenary.nvim",
-			"nvim-treesitter/nvim-treesitter", -- Required for Treesitter integration
+			"nvim-treesitter/nvim-treesitter",
+			"nvim-neotest/nvim-nio",
+			"nvim-neotest/neotest-python",
 		},
 		config = function()
 			require("neotest").setup({
-				runners = {
-					python = {
-						enabled = true,
-						strategy = 'vim.fn.executable("pytest") and "pytest" or "unittest"', -- Corrected string literal
-					},
-					-- Add other language runners as needed (e.g., for C++, web)
+				adapters = {
+					require("neotest-python")({
+						dap = { justMyCode = false },
+						runner = "pytest", -- fallback: "unittest"
+					}),
 				},
-				-- Optional: Configure UI elements or other Neotest features
 				icons = {
 					running = "▶",
-					failed = "",
+					failed = "",
 					passed = "✔",
-					-- Add other icons as needed
 				},
 			})
 		end,
-		keys = {
-			{
-				"<leader>tt",
-				function()
-					require("neotest").run.run()
-				end,
-				desc = "Run tests",
-			},
-			{
-				"<leader>tr",
-				function()
-					require("neotest").run.run_nearest()
-				end,
-				desc = "Run nearest test",
-			},
-			{
-				"<leader>tf",
-				function()
-					require("neotest").run.run_file()
-				end,
-				desc = "Run tests in file",
-			},
-			{
-				"<leader>tS",
-				function()
-					require("neotest").output.open()
-				end,
-				desc = "Show test results",
-			},
-		},
 	},
 }
 
 return plugins
-

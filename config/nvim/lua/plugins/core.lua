@@ -1,22 +1,21 @@
 local plugins = {
-	-- AutoPairs
+	-- Auto-close brackets, quotes, etc.
 	{
 		"windwp/nvim-autopairs",
 		event = "InsertEnter",
 		opts = {},
 	},
 
-	-- Commenter
+	-- gcc / gc to comment lines and motions
 	{
 		"numToStr/Comment.nvim",
-		opts = {},
 		lazy = false,
 		config = function()
 			require("Comment").setup()
 		end,
 	},
 
-	-- Neogit
+	-- Git UI (status, diff, commit, rebase)
 	{
 		"NeogitOrg/neogit",
 		dependencies = {
@@ -29,7 +28,7 @@ local plugins = {
 		end,
 	},
 
-	-- Neo-Tree
+	-- File explorer, buffer list, git status, document symbols
 	{
 		"nvim-neo-tree/neo-tree.nvim",
 		branch = "v3.x",
@@ -53,7 +52,7 @@ local plugins = {
 		end,
 	},
 
-	-- Project
+	-- Project root detection via LSP and common marker files
 	{
 		"ahmedkhalf/project.nvim",
 		config = function()
@@ -64,28 +63,21 @@ local plugins = {
 		end,
 	},
 
-	-- Snacks
+	-- QOL utilities: big file handling, improved input UI
 	{
 		"folke/snacks.nvim",
 		priority = 1000,
 		lazy = false,
-		---@type snacks.Config
 		opts = {
-			-- your configuration comes here
-			-- or leave it empty to use the default settings
-			-- refer to the configuration section below
 			bigfile = { enabled = true },
-			-- dashboard = { enabled = true },
 			input = { enabled = true },
 		},
 	},
 
-	-- Telescope UI select
-	{
-		"nvim-telescope/telescope-ui-select.nvim",
-	},
+	-- Better vim.ui.select (used by LSP code actions, etc.)
+	{ "nvim-telescope/telescope-ui-select.nvim" },
 
-	-- Telescope
+	-- Fuzzy finder for files, grep, LSP, git, and more
 	{
 		"nvim-telescope/telescope.nvim",
 		dependencies = { "nvim-lua/plenary.nvim" },
@@ -97,12 +89,13 @@ local plugins = {
 					},
 				},
 			})
-
 			require("telescope").load_extension("ui-select")
+			require("telescope").load_extension("projects")
+			require("telescope").load_extension("remote-sshfs")
 		end,
 	},
 
-	-- ToggleTerm
+	-- Floating / split terminal toggled with a keymap
 	{
 		"akinsho/toggleterm.nvim",
 		config = function()
@@ -114,7 +107,7 @@ local plugins = {
 		end,
 	},
 
-	-- Treesitter
+	-- Syntax highlighting, indentation, and code awareness
 	{
 		"nvim-treesitter/nvim-treesitter",
 		build = ":TSUpdate",
@@ -129,7 +122,7 @@ local plugins = {
 		end,
 	},
 
-	-- Which-key
+	-- Keymap hints popup on leader press
 	{
 		"folke/which-key.nvim",
 		event = "VeryLazy",

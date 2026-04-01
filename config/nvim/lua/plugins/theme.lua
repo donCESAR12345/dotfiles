@@ -1,50 +1,29 @@
 local plugins = {
+	-- Colorscheme — loaded with highest priority to avoid flash of unstyled UI
 	{
-		"folke/tokyonight.nvim",
-		lazy = false,
-		priority = 9000,
+		"catppuccin/nvim",
+		name = "catppuccin",
+		priority = 1000,
 		config = function()
-			require("tokyonight").setup({
-				style = "night", -- or 'moon', 'storm', 'day'
+			-- Read the current mode from eye-guard-cli's cache
+			local flavour = "mocha" -- default to dark
+			local cache_file = vim.fn.expand("~/.cache/eye-guard-cli/current_mode")
+			local f = io.open(cache_file, "r")
+			if f then
+				local mode = f:read("*l"):gsub("%s+", "")
+				f:close()
+				if mode == "light" then
+					flavour = "latte"
+				end
+			end
+
+			require("catppuccin").setup({
+				flavour = flavour, -- mocha (dark) | latte (light)
+				transparent_background = true,
 			})
-			vim.cmd("colorscheme tokyonight")
+
+			vim.cmd.colorscheme("catppuccin")
 		end,
-	},
-	-- {
-	--     "Mofiqul/dracula.nvim",
-	--     lazy = false,
-	--     priority = 1000,
-	--     opts = {},
-	--     config = function()
-	--         vim.cmd("colorscheme dracula")
-	--     end,
-	-- },
-	-- {
-	-- 	"catppuccin/nvim",
-	--     lazy = false,
-	-- 	name = "catppuccin",
-	-- 	priority = 1000,
-	--  	config = function()
-	--  		vim.cmd("colorscheme catppuccin-mocha")
-	--  	end,
-	-- },
-	{
-		"f-person/auto-dark-mode.nvim",
-		opts = {
-			update_interval = 1000,
-			set_dark_mode = function()
-				vim.api.nvim_set_option_value("background", "dark", {})
-				require("tokyonight").setup({
-					style = "night", -- Switch to night style
-				})
-			end,
-			set_light_mode = function()
-				vim.api.nvim_set_option_value("background", "light", {})
-				require("tokyonight").setup({
-					style = "day", -- Switch to day style
-				})
-			end,
-		},
 	},
 }
 

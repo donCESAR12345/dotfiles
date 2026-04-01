@@ -1,5 +1,5 @@
 local plugins = {
-	-- Colorizer
+	-- Highlight hex colors, rgb(), etc. inline in the buffer
 	{
 		"norcalli/nvim-colorizer.lua",
 		config = function()
@@ -7,24 +7,17 @@ local plugins = {
 		end,
 	},
 
-	-- Dashboard
-
+	-- Dashboard shown on startup
 	{
 		"goolord/alpha-nvim",
 		dependencies = {
 			"nvim-tree/nvim-web-devicons",
 		},
-
 		config = function()
 			local alpha = require("alpha")
-
-			local startify = require("alpha.themes.startify")
-			startify.file_icons.provider = "devicons"
-			alpha.setup(startify.config)
-
 			local dashboard = require("alpha.themes.dashboard")
 
-			-- helper function for utf8 chars
+			-- Resolve byte length of UTF-8 characters for color mapping
 			local function getCharLen(s, pos)
 				local byte = string.byte(s, pos)
 				if not byte then
@@ -33,6 +26,7 @@ local plugins = {
 				return (byte < 0x80 and 1) or (byte < 0xE0 and 2) or (byte < 0xF0 and 3) or (byte < 0xF8 and 4) or 1
 			end
 
+			-- Apply per-character highlight groups to the ASCII logo
 			local function applyColors(logo, colors, logoColors)
 				dashboard.section.header.val = logo
 
@@ -49,8 +43,11 @@ local plugins = {
 
 					for j = 1, #line do
 						local opos = pos
-						pos = pos + getCharLen(logo[i], opos + 1)
-
+						local char_len = getCharLen(logo[i], opos + 1)
+						if not char_len then
+							break
+						end
+						pos = pos + char_len
 						local color_name = colors[line:sub(j, j)]
 						if color_name then
 							table.insert(highlights, { color_name, opos, pos })
@@ -59,23 +56,24 @@ local plugins = {
 
 					table.insert(dashboard.section.header.opts.hl, highlights)
 				end
+
 				return dashboard.opts
 			end
 
 			require("alpha").setup(applyColors({
-				[[  ███       ███  ]],
-				[[  ████      ████ ]],
-				[[  ████     █████ ]],
-				[[ █ ████    █████ ]],
-				[[ ██ ████   █████ ]],
-				[[ ███ ████  █████ ]],
-				[[ ████ ████ ████ ]],
-				[[ █████  ████████ ]],
-				[[ █████   ███████ ]],
-				[[ █████    ██████ ]],
-				[[ █████     █████ ]],
-				[[ ████      ████ ]],
-				[[  ███       ███  ]],
+				[[  ███       ███  ]],
+				[[  ████      ████ ]],
+				[[  ████     █████ ]],
+				[[ █ ████    █████ ]],
+				[[ ██ ████   █████ ]],
+				[[ ███ ████  █████ ]],
+				[[ ████ ████ ████ ]],
+				[[ █████  ████████ ]],
+				[[ █████   ███████ ]],
+				[[ █████    ██████ ]],
+				[[ █████     █████ ]],
+				[[ ████      ████ ]],
+				[[  ███       ███  ]],
 				[[                    ]],
 				[[  N  E  O  V  I  M  ]],
 			}, {
@@ -104,31 +102,22 @@ local plugins = {
 				[[  a  a  a  b  b  b  ]],
 			}))
 
-			-- Add buttons
 			dashboard.section.buttons.val = {
-				dashboard.button("p", "  Recent Projects", "<cmd>Telescope projects<CR>"),
-				dashboard.button("r", "  Recent Files", "<cmd>Telescope oldfiles<CR>"),
-				dashboard.button("n", "  New File", "<cmd>ene<CR>"),
+				dashboard.button("p", "  Recent Projects", "<cmd>Telescope projects<CR>"),
+				dashboard.button("r", "  Recent Files", "<cmd>Telescope oldfiles<CR>"),
+				dashboard.button("n", "  New File", "<cmd>ene<CR>"),
 				dashboard.button(
 					"c",
-					"⚙️ Config files",
-					"<cmd>cd "
-						.. vim.fn.stdpath("config")
-						.. " | Neotree filesystem reveal dir=./"
-						.. " position=float<CR>"
+					"⚙️  Config Files",
+					"<cmd>cd " .. vim.fn.stdpath("config") .. " | Neotree filesystem reveal dir=./ position=float<CR>"
 				),
-				dashboard.button("t", "  Open Terminal", "<cmd>ToggleTerm name=float direction=float<CR>"),
-				dashboard.button("q", "  Quit", "<cmd>qa<CR>"),
+				dashboard.button("t", "  Open Terminal", "<cmd>ToggleTerm name=float direction=float<CR>"),
+				dashboard.button("q", "  Quit", "<cmd>qa<CR>"),
 			}
 
-			-- Add footer
 			dashboard.section.footer.val = {
 				"✨ Powered by Neovim",
 				"🚀 Ready to boost productivity!",
-			}
-			_Gopts = {
-				position = "center",
-				hl = "Type",
 			}
 
 			dashboard.opts.opts.noautocmd = true
@@ -145,7 +134,7 @@ local plugins = {
 		},
 	},
 
-	-- Distant
+	-- Edit remote filesystems over SSH via SSHFS
 	{
 		"chipsenkbeil/distant.nvim",
 		branch = "v0.3",
@@ -154,7 +143,7 @@ local plugins = {
 		end,
 	},
 
-	-- Indent
+	-- Indent guides with scope highlighting
 	{
 		"lukas-reineke/indent-blankline.nvim",
 		main = "ibl",
@@ -163,22 +152,28 @@ local plugins = {
 		},
 	},
 
-	-- LuaLine
+	-- Statusline
 	{
 		"nvim-lualine/lualine.nvim",
 		opts = {
-			theme = "tokyonight",
+			theme = "catppuccin",
 		},
 	},
 
-	-- Noice
+	-- Improved UI for messages, cmdline, and notifications
 	{
 		"folke/noice.nvim",
 		event = "VeryLazy",
-		opts = {},
 		dependencies = {
 			"MunifTanjim/nui.nvim",
-			"rcarriga/nvim-notify",
+			{
+				"rcarriga/nvim-notify",
+				opts = {
+					-- Required when background is transparent — sets the base
+					-- color used to compute notification window transparency
+					background_colour = "#000000",
+				},
+			},
 		},
 		config = function()
 			require("noice").setup({
@@ -197,12 +192,9 @@ local plugins = {
 					lsp_doc_border = false,
 				},
 				routes = {
+					-- Suppress the "written" message after every save
 					{
-						filter = {
-							event = "msg_show",
-							kind = "",
-							find = "written",
-						},
+						filter = { event = "msg_show", kind = "", find = "written" },
 						opts = { skip = true },
 					},
 				},
@@ -210,34 +202,25 @@ local plugins = {
 		end,
 	},
 
-	-- Remote-SSHFS
+	-- Mount remote directories over SSH and browse with Telescope
 	{
 		"nosduco/remote-sshfs.nvim",
 		dependencies = { "nvim-telescope/telescope.nvim" },
 		opts = {},
 	},
 
-	-- TODO Comments
+	-- Highlight and navigate TODO/FIXME/HACK/NOTE comments
 	{
 		"folke/todo-comments.nvim",
 		dependencies = { "nvim-lua/plenary.nvim" },
 		opts = {},
 	},
 
-	-- Virtual Environment Selector
-	-- {
-	-- 	"linux-cultist/venv-selector.nvim",
-	-- 	dependencies = {
-	-- 		"neovim/nvim-lspconfig",
-	-- 		"mfussenegger/nvim-dap",
-	-- 		{ "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
-	-- 	},
-	-- 	lazy = false,
-	-- 	branch = "regexp",
-	-- 	config = function()
-	-- 		require("venv-selector").setup()
-	-- 	end,
-	-- },
+	-- LSP progress indicator shown in the bottom-right corner
+	{
+		"j-hui/fidget.nvim",
+		opts = {},
+	},
 }
 
 return plugins

@@ -1,55 +1,66 @@
 local opt = vim.opt
 local g = vim.g
 
-opt.encoding = "utf-8" -- set encoding
-opt.number = true -- add line numbers
-opt.relativenumber = true -- add relative line numbers
-opt.tabstop = 4 -- number of columns occupied by a tab
-opt.softtabstop = 4 -- see multiple spaces as tabstops
-opt.shiftwidth = 4 -- width for autoindents
-opt.expandtab = true -- convert tabs into spaces
-opt.autoindent = true -- indent a new line the same as the line just typed
-
-opt.clipboard = "unnamedplus"
-opt.smartindent = true
-opt.ignorecase = true
-opt.showmatch = true
-opt.hlsearch = true
-opt.incsearch = true
-opt.cc = "80"
-
--- Fix copy/paste into Neovide
-opt.mouse:append("a")
-
--- Key mappings for clipboard operations
-vim.keymap.set({ "c" }, "<C-V>", "<C-r>+", { noremap = true, silent = true, desc = "Paste in command mode" }) -- Paste in command mode
-vim.keymap.set({ "i" }, "<C-V>", "<C-r>+", { noremap = true, silent = true, desc = "Paste in insert mode" }) -- Paste in insert mode
-
+-- Leader must be set before lazy loads plugins
 g.mapleader = " "
 
-vim.opt.termguicolors = true
-vim.wo.number = true
+-- ==============================================================================
+-- DISPLAY
+-- ==============================================================================
+opt.number = true
+opt.relativenumber = true
+opt.colorcolumn = "80"
+opt.termguicolors = true
+opt.showmatch = true
 
-vim.api.nvim_set_hl(0, "Normal", {
-	fg = "#bbbbbb",
-	bg = "NONE",
-	bold = false,
-	italic = false,
-	underline = false,
-	undercurl = false,
-})
+-- ==============================================================================
+-- INDENTATION
+-- ==============================================================================
+opt.tabstop = 4
+opt.softtabstop = 4
+opt.shiftwidth = 4
+opt.expandtab = true
+opt.autoindent = true
+opt.smartindent = true
 
--- Example for configuring Neovim to load user-installed installed Lua rocks:
-package.path = package.path .. ";" .. vim.fn.expand("$HOME") .. "/.luarocks/share/lua/5.1/?/init.lua"
-package.path = package.path .. ";" .. vim.fn.expand("$HOME") .. "/.luarocks/share/lua/5.1/?.lua"
-
--- Python virtual env
-vim.g.python3_host_prog = vim.fn.expand("~/.conda/envs/academy/bin/python3.11")
-
--- Web development 2 spaces
+-- 2-space indentation for web filetypes
 vim.api.nvim_create_augroup("WebDevTabs", { clear = true })
 vim.api.nvim_create_autocmd("FileType", {
 	group = "WebDevTabs",
 	pattern = { "html", "css", "javascript", "typescript", "typescriptreact", "json" },
 	command = "setlocal shiftwidth=2 softtabstop=2 tabstop=2 expandtab",
 })
+
+-- ==============================================================================
+-- SEARCH
+-- ==============================================================================
+opt.ignorecase = true
+opt.hlsearch = true
+opt.incsearch = true
+
+-- ==============================================================================
+-- MISC
+-- ==============================================================================
+opt.encoding = "utf-8"
+opt.clipboard = "unnamedplus"
+
+-- Required for Neovide clipboard support
+opt.mouse:append("a")
+
+-- ==============================================================================
+-- PYTHON
+-- ==============================================================================
+-- Use the active uv venv if present, otherwise fall back to system Python
+local venv_python = vim.fn.getcwd() .. "/.venv/bin/python"
+if vim.fn.executable(venv_python) == 1 then
+	vim.g.python3_host_prog = venv_python
+else
+	vim.g.python3_host_prog = vim.fn.exepath("python3")
+end
+
+-- ==============================================================================
+-- LUAROCKS
+-- ==============================================================================
+-- Expose user-installed Lua rocks to Neovim's package loader
+package.path = package.path .. ";" .. vim.fn.expand("$HOME") .. "/.luarocks/share/lua/5.1/?/init.lua"
+package.path = package.path .. ";" .. vim.fn.expand("$HOME") .. "/.luarocks/share/lua/5.1/?.lua"
