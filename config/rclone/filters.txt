@@ -1,0 +1,68 @@
+# --- ARCHIVOS DE SISTEMA Y TEMPORALES ---
+- *.iso
+- *.img
+- *.vdi
+- *.qcow2
+- *.tmp
+- *.log
+- .DS_Store
+- desktop.ini
+- Thumbs.db
+- **/__MACOSX/**
+- **/.stversions/**
+- **/kopia-backup/**
+
+# --- DESARROLLO WEB (Node.js) ---
+- **/node_modules/**
+- **/.npm/**
+- **/.pnpm-store/**
+
+# --- PYTHON (Data Science & Dev) ---
+- **/__pycache__/**
+- **/*.pyc
+- **/*.pyo
+- **/*.pyd
+- **/.venv/**
+- **/venv/**
+- **/.env/**
+- **/.pytest_cache/**
+- **/.ipynb_checkpoints/**
+
+# --- FLUTTER / DART / MOBILE ---
+- **/.dart_tool/**
+- **/.flutter-plugins
+- **/.flutter-plugins-dependencies
+- **/.packages
+- **/build/**
+- **/android/app/build/**
+- **/.connected/**
+
+# --- RUST ---
+- **/target/**
+
+# --- C / C++ / COMPILACIÓN ---
+- **/*.o
+- **/*.obj
+- **/*.out
+- **/*.exe
+- **/*.dll
+- **/*.so
+- **/*.a
+- **/*.lib
+- **/CMakeCache.txt
+- **/CMakeFiles/**
+- **/cmake-build-debug/**
+- **/cmake-build-release/**
+- **/.cache/**
+
+# --- IDEs Y CONFIGURACIONES LOCALES ---
+- **/.idea/**
+- **/.vscode/**
+- **/.vs/**
+
+# --- EXCLUSIÓN DE GIT (Opcional pero recomendado para velocidad) ---
+# Descomenta la siguiente línea si tus repos ya están en GitHub/GitLab
+- **/.git/**
+
+# --- EXCLUSIÓN DE LA CARPETA UNIVERSIDAD
+- **/Academico/**

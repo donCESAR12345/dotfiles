@@ -1,0 +1,27 @@
+[Unit]
+Description=Bidirectional sync via Rclone (%i)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=%h/.config/rclone/sync-%i.env
+ExecStart=/usr/bin/rclone bisync \
+    ${LOCAL_PATH} \
+    ${REMOTE_PATH} \
+    --bwlimit ${BWLIMIT} \
+    --filter-from %h/.config/rclone/filters.txt \
+    --compare modtime,size \
+    --conflict-resolve newer \
+    --max-delete 90 \
+    --resilient \
+    --recover \
+    --drive-export-formats link.html \
+    --fix-case \
+    --log-file ${LOG_FILE} \
+    --log-level INFO
+CPUSchedulingPolicy=idle
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=default.target
