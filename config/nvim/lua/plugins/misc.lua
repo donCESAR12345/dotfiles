@@ -103,7 +103,7 @@ local plugins = {
 			}))
 
 			dashboard.section.buttons.val = {
-				dashboard.button("p", "  Recent Projects", "<cmd>Telescope projects<CR>"),
+				dashboard.button("p", "  Recent Projects", "<cmd>lua Snacks.picker.projects()<CR>"),
 				dashboard.button("r", "  Recent Files", "<cmd>Telescope oldfiles<CR>"),
 				dashboard.button("n", "  New File", "<cmd>ene<CR>"),
 				dashboard.button(
@@ -132,15 +132,6 @@ local plugins = {
 		opts = {
 			main_image = "file",
 		},
-	},
-
-	-- Edit remote filesystems over SSH via SSHFS
-	{
-		"chipsenkbeil/distant.nvim",
-		branch = "v0.3",
-		config = function()
-			require("distant"):setup()
-		end,
 	},
 
 	-- Indent guides with scope highlighting

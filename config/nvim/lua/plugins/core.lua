@@ -6,6 +6,13 @@ local plugins = {
 		opts = {},
 	},
 
+	-- Auto-close and rename HTML/XML-like tags
+	{
+		"windwp/nvim-ts-autotag",
+		event = "InsertEnter",
+		opts = {},
+	},
+
 	-- gcc / gc to comment lines and motions
 	{
 		"numToStr/Comment.nvim",
@@ -52,18 +59,7 @@ local plugins = {
 		end,
 	},
 
-	-- Project root detection via LSP and common marker files
-	{
-		"ahmedkhalf/project.nvim",
-		config = function()
-			require("project_nvim").setup({
-				detection_methods = { "pattern", "lsp" },
-				patterns = { ".git", "Makefile", "package.json", "pipfile", "pyproject.toml", ".env" },
-			})
-		end,
-	},
-
-	-- QOL utilities: big file handling, improved input UI
+	-- QOL utilities: big file handling, improved input UI, projects
 	{
 		"folke/snacks.nvim",
 		priority = 1000,
@@ -71,6 +67,7 @@ local plugins = {
 		opts = {
 			bigfile = { enabled = true },
 			input = { enabled = true },
+			picker = { enabled = true },
 		},
 	},
 
@@ -90,7 +87,6 @@ local plugins = {
 				},
 			})
 			require("telescope").load_extension("ui-select")
-			require("telescope").load_extension("projects")
 			require("telescope").load_extension("remote-sshfs")
 		end,
 	},
