@@ -40,13 +40,12 @@ local plugins = {
 		"mfussenegger/nvim-dap-python",
 		lazy = false,
 		config = function()
-			-- Requires a debugpy installation in a dedicated virtualenv:
-			-- python -m venv ~/.virtualenvs/debugpy && pip install debugpy
-			local debugpy = vim.fn.expand("~/.virtualenvs/debugpy/bin/python")
-			if vim.fn.executable(debugpy) == 1 then
-				require("dap-python").setup(debugpy)
+			-- Path to the python executable installed by Mason
+			local mason_path = vim.fn.glob(vim.fn.stdpath("data") .. "/mason/packages/debugpy/venv/bin/python")
+			if mason_path ~= "" then
+				require("dap-python").setup(mason_path)
 			else
-				vim.notify("debugpy not found — DAP for Python disabled", vim.log.levels.WARN)
+				vim.notify("debugpy not found in Mason — DAP for Python disabled", vim.log.levels.WARN)
 			end
 		end,
 	},
