@@ -2,6 +2,7 @@
 Description=Bidirectional sync via Rclone (%i)
 After=network-online.target
 Wants=network-online.target
+OnFailure=notify-failed@%n.service
 
 [Service]
 Type=oneshot
@@ -22,6 +23,7 @@ ExecStart=/usr/bin/rclone bisync \
     --log-level INFO
 CPUSchedulingPolicy=idle
 IOSchedulingClass=idle
+KillSignal=SIGINT
 
 [Install]
 WantedBy=default.target
