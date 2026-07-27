@@ -17,13 +17,14 @@ return {
 	},
 	{
 		"kristijanhusak/vim-dadbod-completion",
-		dependencies = { "hrsh7th/nvim-cmp" },
+		dependencies = { "tpope/vim-dadbod", "hrsh7th/nvim-cmp" },
 		ft = { "sql", "mysql", "plsql" },
 		config = function()
 			-- Hook Dadbod completion into nvim-cmp
 			require("cmp").setup.filetype({ "sql", "mysql", "plsql" }, {
 				sources = {
 					{ name = "vim-dadbod-completion" },
+					{ name = "nvim_lsp" },
 					{ name = "buffer" },
 				},
 			})
