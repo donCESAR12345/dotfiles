@@ -48,8 +48,10 @@ local plugins = {
 				"pyright", -- Python (type checking)
 				"ruff", -- Python (linting + formatting)
 				"lua_ls", -- Lua
+				"sqls", -- SQL
 				"terraformls", -- Terraform
 				"ts_ls", -- TypeScript / JavaScript
+				"yamlls", -- YAML
 			}
 
 			for _, server in ipairs(servers) do
@@ -83,6 +85,10 @@ local plugins = {
 				bash = { "shfmt", "shellcheck" },
 				zsh = { "shfmt", "shellcheck" },
 				terraform = { "terraform_fmt" },
+				sql = { "sql-formatter" },
+				mysql = { "sql-formatter" },
+				yaml = { "yamlfmt" },
+				yml = { "yamlfmt" },
 			},
 			format_on_save = {
 				lsp_fallback = true,
