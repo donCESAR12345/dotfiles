@@ -1,0 +1,6 @@
+[Unit]
+Description=Notification for failed systemd service (%i)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/notify-send -u critical -i dialog-error "Error en Servicio" "El servicio %i ha fallado. Revisa con: journalctl --user -u %i"

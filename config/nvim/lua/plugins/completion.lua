@@ -68,6 +68,7 @@ local plugins = {
 				nvim_lsp = "[LSP]",
 				path = "[Path]",
 				buffer = "[Buf]",
+				["vim-dadbod-completion"] = "[DB]",
 			}
 
 			-- Only trigger completion when there's a real word before the cursor

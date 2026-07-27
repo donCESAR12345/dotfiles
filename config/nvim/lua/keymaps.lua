@@ -65,14 +65,13 @@ end
 -- ==============================================================================
 M.git = function()
 	local wk = require("which-key")
-	local builtin = require("telescope.builtin")
 
 	vim.keymap.set("n", "<leader>gg", ":Neogit<CR>", {})
-	vim.keymap.set("n", "<leader>gs", builtin.git_status, {})
-	vim.keymap.set("n", "<leader>gb", builtin.git_branches, {})
+	vim.keymap.set("n", "<leader>gs", function() Snacks.picker.git_status() end, { desc = "Status" })
+	vim.keymap.set("n", "<leader>gb", function() Snacks.picker.git_branches() end, { desc = "Branches" })
 
 	wk.add({
-		{ "<leader>g", icon = "", group = "Git" },
+		{ "<leader>g", icon = "󰊢", group = "Git" },
 		{ "<leader>gg", icon = "", desc = "Open Neogit" },
 		{ "<leader>gb", icon = "", desc = "Branches" },
 		{ "<leader>gs", icon = "", desc = "Status" },
@@ -128,27 +127,26 @@ M.lsp = function()
 end
 
 -- ==============================================================================
--- TELESCOPE
+-- SEARCH (Snacks Picker)
 -- ==============================================================================
-M.telescope = function()
+M.search = function()
 	local wk = require("which-key")
-	local builtin = require("telescope.builtin")
 
-	vim.keymap.set("n", "<leader>b", builtin.buffers, {})
-	vim.keymap.set("n", "<leader>c", builtin.colorscheme, {})
-	vim.keymap.set("n", "<leader>ff", builtin.find_files, {})
-	vim.keymap.set("n", "<leader>fg", builtin.live_grep, {})
-	vim.keymap.set("n", "<leader>fh", builtin.oldfiles, {})
-	vim.keymap.set("n", "<leader>fm", builtin.marks, {})
+	vim.keymap.set("n", "<leader>ff", function() Snacks.picker.files() end, { desc = "Find files" })
+	vim.keymap.set("n", "<leader>fg", function() Snacks.picker.grep() end, { desc = "Live grep" })
+	vim.keymap.set("n", "<leader>fh", function() Snacks.picker.recent() end, { desc = "Recent files" })
+	vim.keymap.set("n", "<leader>fm", function() Snacks.picker.marks() end, { desc = "Bookmarks" })
+	vim.keymap.set("n", "<leader>fb", function() Snacks.picker.buffers() end, { desc = "Buffers" })
+	vim.keymap.set("n", "<leader>fc", function() Snacks.picker.colorschemes() end, { desc = "Select colorscheme" })
 
 	wk.add({
-		{ "<leader>b", icon = "", desc = "Buffers" },
-		{ "<leader>c", icon = "", desc = "Select colorscheme" },
-		{ "<leader>f", icon = "", group = "Search" },
+		{ "<leader>f", icon = "󰍉", group = "Search" },
 		{ "<leader>ff", icon = "󱙓", desc = "Find files" },
 		{ "<leader>fg", icon = "󱎸", desc = "Live grep" },
-		{ "<leader>fh", icon = "", desc = "Recent files" },
+		{ "<leader>fh", icon = "󰋚", desc = "Recent files" },
 		{ "<leader>fm", icon = "󱤇", desc = "Bookmarks" },
+		{ "<leader>fb", icon = "󰓗", desc = "Buffers" },
+		{ "<leader>fc", icon = "󰏘", desc = "Select colorscheme" },
 	})
 end
 
@@ -161,12 +159,23 @@ M.toggleterm = function()
 	vim.keymap.set("n", "<leader>tf", ":ToggleTerm name=float direction=float<CR>", {})
 	vim.keymap.set("n", "<leader>tv", ":ToggleTerm name=vert direction=vertical size=50<CR>", {})
 	vim.keymap.set("n", "<leader>th", ":ToggleTerm name=horiz direction=horizontal<CR>", {})
+	vim.keymap.set("n", "<leader>td", function()
+		local file = vim.fn.expand("%:p")
+		if file == "" then
+			vim.notify("No file associated with current buffer", vim.log.levels.WARN)
+			return
+		end
+		local terminal = require("toggleterm.terminal").Terminal
+		local vd = terminal:new({ cmd = "vd " .. vim.fn.shellescape(file), direction = "float" })
+		vd:toggle()
+	end, { desc = "Terminal Data explorer (VisiData)" })
 
 	wk.add({
 		{ "<leader>t", icon = "", group = "Terminal" },
 		{ "<leader>tf", icon = "", desc = "Floating terminal" },
 		{ "<leader>tv", icon = "", desc = "Vertical terminal" },
 		{ "<leader>th", icon = "", desc = "Horizontal terminal" },
+		{ "<leader>td", icon = "󰱿", desc = "Terminal Data explorer (VisiData)" },
 	})
 end
 
@@ -225,6 +234,20 @@ M.utils = function()
 end
 
 -- ==============================================================================
+-- REPL (iron.nvim)
+-- ==============================================================================
+M.repl = function()
+	local wk = require("which-key")
+	wk.add({
+		{ "<leader>r", group = "REPL" },
+		{ "<leader>rt", desc = "Toggle REPL" },
+		{ "<leader>rs", desc = "Send motion" },
+		{ "<leader>rl", desc = "Send line" },
+		{ "<leader>rf", desc = "Send file" },
+	})
+end
+
+-- ==============================================================================
 -- SETUP
 -- ==============================================================================
 M.setup = function()
@@ -232,10 +255,11 @@ M.setup = function()
 	M.dap()
 	M.git()
 	M.lsp()
-	M.telescope()
+	M.search()
 	M.toggleterm()
 	M.testing()
 	M.utils()
+	M.repl()
 end
 
 return M

@@ -104,7 +104,7 @@ local plugins = {
 
 			dashboard.section.buttons.val = {
 				dashboard.button("p", "  Recent Projects", "<cmd>lua Snacks.picker.projects()<CR>"),
-				dashboard.button("r", "  Recent Files", "<cmd>Telescope oldfiles<CR>"),
+				dashboard.button("r", "  Recent Files", "<cmd>lua Snacks.picker.recent()<CR>"),
 				dashboard.button("n", "  New File", "<cmd>ene<CR>"),
 				dashboard.button(
 					"c",
