@@ -68,11 +68,9 @@ local plugins = {
 			bigfile = { enabled = true },
 			input = { enabled = true },
 			picker = { enabled = true },
+			select = { enabled = true },
 		},
 	},
-
-	-- Better vim.ui.select (used by LSP code actions, etc.)
-	{ "nvim-telescope/telescope-ui-select.nvim" },
 
 	-- Fuzzy finder for files, grep, LSP, git, and more
 	{
@@ -80,13 +78,7 @@ local plugins = {
 		dependencies = { "nvim-lua/plenary.nvim" },
 		config = function()
 			require("telescope").setup({
-				extensions = {
-					["ui-select"] = {
-						require("telescope.themes").get_dropdown({}),
-					},
-				},
 			})
-			require("telescope").load_extension("ui-select")
 			require("telescope").load_extension("remote-sshfs")
 		end,
 	},
