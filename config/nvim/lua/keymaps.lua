@@ -85,7 +85,11 @@ M.lsp = function()
 	local wk = require("which-key")
 
 	local toggle_diagnostics = function()
-		vim.diagnostic.enable(not vim.diagnostic.is_enabled())
+		if vim.diagnostic.is_enabled() then
+			vim.diagnostic.enable(false)
+		else
+			vim.diagnostic.enable(true)
+		end
 	end
 
 	-- LSP actions
@@ -100,11 +104,13 @@ M.lsp = function()
 	vim.keymap.set("n", "<leader>lf", vim.lsp.buf.format, {})
 	vim.keymap.set("n", "<leader>lS", ":Neotree document_symbols reveal float<CR>", {})
 
-	-- Diagnostics
+	-- Diagnostics / DB
 	vim.keymap.set("n", "<leader>de", vim.diagnostic.open_float, {})
 	vim.keymap.set("n", "<leader>dn", vim.diagnostic.goto_next, {})
 	vim.keymap.set("n", "<leader>dN", vim.diagnostic.goto_prev, {})
 	vim.keymap.set("n", "<leader>dq", toggle_diagnostics, {})
+	vim.keymap.set("n", "<leader>du", "<cmd>DBUIToggle<cr>", {})
+	vim.keymap.set("n", "<leader>db", "<cmd>DBUI<cr>", {})
 
 	wk.add({
 		{ "<leader>l", icon = "", group = "LSP" },
@@ -118,11 +124,13 @@ M.lsp = function()
 		{ "<leader>lf", icon = "󰉠", desc = "Format buffer" },
 		{ "<leader>lS", icon = "", desc = "Document symbols" },
 
-		{ "<leader>d", icon = "", group = "Diagnostics" },
-		{ "<leader>de", icon = "󰘖", desc = "Open floating diagnostic" },
+		{ "<leader>d", icon = "", group = "Diagnostics / DB" },
+		{ "<leader>de", icon = "", desc = "Open floating diagnostic" },
 		{ "<leader>dn", icon = "", desc = "Next diagnostic" },
 		{ "<leader>dN", icon = "", desc = "Previous diagnostic" },
 		{ "<leader>dq", icon = "", desc = "Toggle diagnostics" },
+		{ "<leader>du", icon = "󰆼", desc = "Toggle Database Sidebar" },
+		{ "<leader>db", icon = "󰓗", desc = "Database Connections list" },
 	})
 end
 
@@ -211,25 +219,29 @@ end
 -- ==============================================================================
 M.utils = function()
 	local wk = require("which-key")
+	local utils = require("utils")
 
-	vim.keymap.set("n", "<leader>ui", function()
-		require("utils").dev.install_deps()
-	end, {})
+	vim.keymap.set("n", "<leader>ui", utils.dev.install_deps, {})
 	vim.keymap.set("n", "<leader>us", function()
-		local script_name = vim.fn.input("Enter script name to run: ")
-		if script_name ~= "" then
-			require("utils").dev.run_script(script_name)
-		end
+		local file = vim.fn.expand("%:t")
+		utils.dev.run_script(file)
 	end, {})
-	vim.keymap.set("n", "<leader>uv", function()
-		require("utils").dev.setup_venv()
-	end, {})
+	vim.keymap.set("n", "<leader>uv", utils.dev.setup_venv, {})
+	vim.keymap.set("n", "<leader>ue", "<cmd>VenvSelect<cr>", {})
+	vim.keymap.set("n", "<leader>uc", "<cmd>VenvSelectCached<cr>", {})
+	vim.keymap.set("n", "<leader>ume", utils.dev.marimo_edit, {})
+	vim.keymap.set("n", "<leader>umr", utils.dev.marimo_run, {})
 
 	wk.add({
 		{ "<leader>u", icon = "⚙️", group = "Utils" },
 		{ "<leader>ui", icon = "", desc = "Install dependencies" },
 		{ "<leader>us", icon = "", desc = "Run script" },
-		{ "<leader>uv", icon = "", desc = "Setup virtual env" },
+		{ "<leader>uv", icon = "", desc = "Terminal: Activate shell environment" },
+		{ "<leader>ue", icon = "󱔎", desc = "Select Python Venv (Neovim)" },
+		{ "<leader>uc", icon = "󰋚", desc = "Select Cached Venv" },
+		{ "<leader>um", icon = "󱔗", group = "Marimo Notebooks" },
+		{ "<leader>ume", icon = "󰏫", desc = "Marimo Edit current file" },
+		{ "<leader>umr", icon = "󰐊", desc = "Marimo Run current file" },
 	})
 end
 
