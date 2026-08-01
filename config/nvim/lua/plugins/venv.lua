@@ -14,7 +14,7 @@ return {
 				search = {
 					pixi_envs = {
 						type = "conda",
-						search_target = "/.pixi/envs/*/bin/python",
+						search_target = "\\.pixi/envs/[^/]+/bin/python",
 					},
 				},
 			},
