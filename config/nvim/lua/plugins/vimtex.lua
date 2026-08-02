@@ -158,7 +158,9 @@ end
 M.init = function()
   -- Disable VimTeX's native compiler and set viewer method
   vim.g.vimtex_compiler_enabled = 0
-  vim.g.vimtex_view_method = "okular"
+  vim.g.vimtex_view_method = "general"
+  vim.g.vimtex_view_general_viewer = "okular"
+  vim.g.vimtex_view_general_options = "--unique file:@pdf#src:@line@tex"
   
   local group = vim.api.nvim_create_augroup("LaTeXAutoCompile", { clear = true })
   
