@@ -101,7 +101,11 @@ local function compile_latex()
         end
       end
     end,
-    on_exit = function(_, exit_code)
+    on_exit = function(job_id, exit_code)
+      -- Ignore callbacks from canceled/older jobs
+      if job_id ~= compile_job_id then
+        return
+      end
       compile_job_id = nil
       if exit_code == 0 then
         vim.notify("¡Compilación exitosa!\n" .. target, vim.log.levels.INFO, { title = "LaTeX Build" })
@@ -175,8 +179,8 @@ M.init = function()
   vim.api.nvim_create_autocmd("FileType", {
     group = group,
     pattern = "tex",
-    callback = function()
-      local opts = { buffer = true, silent = true }
+    callback = function(ev)
+      local opts = { buffer = ev.buf, silent = true }
       -- <localleader>ll to compile manually
       vim.keymap.set("n", "<localleader>ll", compile_latex, opts)
       -- <localleader>lv to view PDF in Okular
