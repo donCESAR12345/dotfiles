@@ -182,11 +182,10 @@ M.init = function()
     group = group,
     pattern = "tex",
     callback = function(ev)
-      local opts = { buffer = ev.buf, silent = true }
       -- <localleader>ll to compile manually
-      vim.keymap.set("n", "<localleader>ll", compile_latex, opts)
+      vim.keymap.set("n", "<localleader>ll", compile_latex, { buffer = ev.buf, silent = true, desc = "LaTeX: Compilar PDF" })
       -- <localleader>lv to view PDF in Okular
-      vim.keymap.set("n", "<localleader>lv", open_pdf_in_okular, opts)
+      vim.keymap.set("n", "<localleader>lv", open_pdf_in_okular, { buffer = ev.buf, silent = true, desc = "LaTeX: Ver PDF en Okular" })
     end,
   })
 end
