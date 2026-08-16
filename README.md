@@ -6,6 +6,7 @@ The setup follows these core principles:
 
 * **Environment isolation**
 * **Declarative configuration via GNU Stow**
+* **Modular package architecture**
 * **Automation-first mindset**
 * **Modern CLI tooling**, largely based on Rust
 
@@ -32,7 +33,7 @@ The system is deployed using the official [`archinstall`](https://wiki.archlinux
 The configuration file is located at:
 
 ```
-config/archinstall/user_configuration.json
+archinstall/.config/archinstall/user_configuration.json
 ```
 
 **Key configuration details:**
@@ -113,7 +114,7 @@ SSH key handling is designed to keep secrets **encrypted and ephemeral**:
 To avoid manual key loading and authentication errors, a wrapper script is used:
 
 ```
-scripts/keepassxc-prompt
+scripts/.local/bin/keepassxc-prompt
 ```
 
 **Execution flow:**
@@ -152,19 +153,19 @@ Zsh is fully modularized and compliant with the **XDG Base Directory Specificati
 
 ### 3.1 File Structure
 
-* **`home/.zshenv`**
+* **`zsh/.config/zsh/.zshenv`**
 
   * Global environment variables
   * `PATH` definitions
   * XDG directory locations
-  * Always sourced (even in non-interactive shells)
+  * Sourced for environment setup
 
-* **`config/zsh/.zshrc`**
+* **`zsh/.config/zsh/.zshrc`**
 
   * Interactive configuration
   * Aliases, plugins, completion, prompt
 
-* **`config/zsh/.env`**
+* **`zsh/.config/zsh/.env`**
 
   * Sensitive environment variables
   * Loaded at the very end of `.zshrc`
@@ -249,46 +250,83 @@ Neovim is configured as a **modular, high-performance IDE**, optimized for Pytho
 
 ---
 
-## 📦 5. Configuration Management (GNU Stow)
+## ⚡ 5. Fast Automated Installation
 
-All dotfiles are deployed via **symbolic links**, ensuring consistency and reversibility.
+The repository includes an automated management script `./install.sh` built around GNU Stow. It handles directory preparation, module deployment, script permissions, and plugin synchronization automatically.
 
-### 5.1 Repository Layout
+### 5.1 Usage Examples
 
-* **`home/`**
+```bash
+# Install / stow all modules
+./install.sh
 
-  * Files linked directly into `$HOME`
-  * Example: `.zshenv`
+# Selective installation of specific modules (e.g. zsh and nvim)
+./install.sh zsh nvim
 
-* **`config/`**
+# Simulate deployment without modifying any files (dry-run)
+./install.sh --dry-run
+# or
+./install.sh -n
 
-  * Application directories under `~/.config/`
-  * Neovim, Zsh, Tmux, Archinstall
+# Unstow / remove symlinks for all or selected modules
+./install.sh --uninstall
+# or
+./install.sh -D zsh nvim
+```
 
-* **`scripts/`**
+### 5.2 What `install.sh` Does Automatically
 
-  * Custom user utilities and automation scripts
+1. **Target Directory Setup:** Pre-creates essential target directories inside `$HOME` (`.config`, `.local/bin`, `.local/state/zsh`).
+2. **Modular Stow:** Executes GNU Stow (`stow -R -v -t ~ <module>`) to link package files into your target home directory.
+3. **Script Permissions:** Ensures custom user binaries in `scripts/.local/bin/` are executable (`chmod +x`).
+4. **Plugin Sync:** Headlessly synchronizes Neovim plugins via `lazy.nvim` (`nvim --headless "+Lazy! sync" +qa`) when the `nvim` module is selected.
 
 ---
 
-### 5.2 Deployment Commands
+## 📦 6. Configuration Management (GNU Stow)
 
-From the repository root (`~/dotfiles`):
+All dotfiles are structured into top-level package directories and deployed via **symbolic links** mapping directly to target locations inside `$HOME`.
+
+### 6.1 Repository Layout
+
+Each top-level directory represents an independent, modular package:
+
+```
+dotfiles/
+├── archinstall/    # Archinstall configuration (~/.config/archinstall/user_configuration.json)
+├── foot/           # Foot terminal emulator config (~/.config/foot/)
+├── nvim/           # Neovim IDE configuration (~/.config/nvim/)
+├── rclone/         # Rclone sync configuration (~/.config/rclone/)
+├── scripts/        # User binaries & automation (~/.local/bin/)
+├── systemd/        # User systemd services & timers (~/.config/systemd/user/)
+├── tmux/           # Tmux terminal multiplexer config (~/.config/tmux/)
+├── zellij/         # Zellij terminal workspace config (~/.config/zellij/)
+└── zsh/            # Zsh shell configuration (~/.config/zsh/)
+```
+
+### 6.2 Manual GNU Stow Commands
+
+If you prefer to manage symlinks manually without using `./install.sh`, you can invoke `stow` directly from the repository root:
 
 ```bash
-# Link home files
-stow -t ~ home
+# Stow individual modules into $HOME
+stow zsh -t ~
+stow nvim -t ~
+stow scripts -t ~
 
-# Link application configs
-stow -t ~/.config config
+# Stow all package modules at once
+stow archinstall foot nvim rclone scripts systemd tmux zellij zsh -t ~
 
-# Link user scripts
-stow -t ~/.local/bin scripts
+# Restow (refresh links) for specific modules
+stow -R zsh nvim -t ~
+
+# Unstow / remove symlinks for a module
+stow -D zsh -t ~
 ```
 
 ---
 
-## 🚀 6. Post-Installation Checklist
+## 🚀 7. Post-Installation Checklist
 
 To replicate this system on new hardware:
 
@@ -296,14 +334,19 @@ To replicate this system on new hardware:
 
    ```bash
    git clone https://github.com/donCESAR12345/dotfiles.git ~/dotfiles
+   cd ~/dotfiles
    ```
 
-2. **Install the system**
+2. **Install the system (optional Arch Linux deployment)**
 
    ```bash
-   sudo archinstall --config config/archinstall/user_configuration.json
+   sudo archinstall --config archinstall/.config/archinstall/user_configuration.json
    ```
 
 3. **Deploy dotfiles**
 
-   * After installation, run the GNU Stow commands listed in section **5.2**
+   * Run the automated installation script:
+     ```bash
+     ./install.sh
+     ```
+   * Or use manual GNU Stow commands as described in section **6.2**.
