@@ -94,12 +94,18 @@ for module in "${SELECTED_MODULES[@]}"; do
 
     if [[ "$ACTION" == "stow" ]]; then
         info "Stowing module: $module"
-        stow $DRY_RUN -R -v -t "$TARGET_HOME" "$module"
-        ok "Stowed $module"
+        if stow $DRY_RUN -R -v -t "$TARGET_HOME" "$module"; then
+            ok "Stowed $module"
+        else
+            warn "Failed to stow module '$module'. Check for conflicting existing files in $TARGET_HOME."
+        fi
     elif [[ "$ACTION" == "unstow" ]]; then
         info "Unstowing module: $module"
-        stow $DRY_RUN -D -v -t "$TARGET_HOME" "$module"
-        ok "Unstowed $module"
+        if stow $DRY_RUN -D -v -t "$TARGET_HOME" "$module"; then
+            ok "Unstowed $module"
+        else
+            warn "Failed to unstow module '$module'."
+        fi
     fi
 done
 
