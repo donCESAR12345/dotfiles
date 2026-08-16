@@ -17,17 +17,33 @@ local plugins = {
 			local alpha = require("alpha")
 			local dashboard = require("alpha.themes.dashboard")
 
-			-- High-impact ASCII Art Header for Neovim
-			dashboard.section.header.val = {
-				[[                                                    ]],
-				[[  ███╗   ██╗███████╗██████╗ ██╗   ██╗██╗███╗   ███╗  ]],
-				[[  ████╗  ██║██╔════╝██╔══██╗██║   ██║██║████╗ ████║  ]],
-				[[  ██╔██╗ ██║█████╗  ██║  ██║██║   ██║██║██╔████╔██║  ]],
-				[[  ██║╚██╗██║██╔══╝  ██║  ██║╚██╗ ██╔╝██║██║╚██╔╝██║  ]],
-				[[  ██║ ╚████║███████╗██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║  ]],
-				[[  ╚═╝  ╚═══╝╚══════╝╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝  ]],
-				[[                                                    ]],
-			}
+			-- Load custom header from header.txt if present, otherwise fallback to default ASCII logo
+			local function get_header()
+				local header_path = vim.fn.stdpath("config") .. "/header.txt"
+				local file = io.open(header_path, "r")
+				if file then
+					local lines = {}
+					for line in file:lines() do
+						table.insert(lines, line)
+					end
+					file:close()
+					if #lines > 0 then
+						return lines
+					end
+				end
+				return {
+					[[                                                    ]],
+					[[  ███╗   ██╗███████╗██████╗ ██╗   ██╗██╗███╗   ███╗  ]],
+					[[  ████╗  ██║██╔════╝██╔══██╗██║   ██║██║████╗ ████║  ]],
+					[[  ██╔██╗ ██║█████╗  ██║  ██║██║   ██║██║██╔████╔██║  ]],
+					[[  ██║╚██╗██║██╔══╝  ██║  ██║╚██╗ ██╔╝██║██║╚██╔╝██║  ]],
+					[[  ██║ ╚████║███████╗██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║  ]],
+					[[  ╚═╝  ╚═══╝╚══════╝╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝  ]],
+					[[                                                    ]],
+				}
+			end
+
+			dashboard.section.header.val = get_header()
 			dashboard.section.header.opts.hl = "AlphaHeader"
 			vim.api.nvim_set_hl(0, "AlphaHeader", { fg = "#7aa2f7", bold = true })
 
