@@ -17,30 +17,70 @@ local plugins = {
 			local alpha = require("alpha")
 			local dashboard = require("alpha.themes.dashboard")
 
+			-- Default list of randomized subtitles
+			local default_quotes = {
+				"🚀 Innovación y desarrollo en GITA",
+				"💡 Programando el futuro, una línea a la vez",
+				"🔥 Que el código te acompañe",
+				"⚡ Ready to build amazing things",
+				"🧠 Keep calm and code on",
+				"✨ Transformando ideas en software",
+				"☕ Powered by coffee and passion",
+				"🔬 Grupo de Investigación GITA <3",
+			}
+
+			-- Load quotes from quotes.txt if present, otherwise fallback to default list
+			local function get_random_quote()
+				local quotes_path = vim.fn.stdpath("config") .. "/quotes.txt"
+				local quotes = {}
+				local file = io.open(quotes_path, "r")
+				if file then
+					for line in file:lines() do
+						if line:match("%S") then
+							table.insert(quotes, line)
+						end
+					end
+					file:close()
+				end
+
+				if #quotes == 0 then
+					quotes = default_quotes
+				end
+
+				math.randomseed(os.time() + vim.fn.getpid())
+				return quotes[math.random(#quotes)]
+			end
+
 			-- Load custom header from header.txt if present, otherwise fallback to default ASCII logo
 			local function get_header()
 				local header_path = vim.fn.stdpath("config") .. "/header.txt"
+				local lines = {}
 				local file = io.open(header_path, "r")
 				if file then
-					local lines = {}
 					for line in file:lines() do
 						table.insert(lines, line)
 					end
 					file:close()
-					if #lines > 0 then
-						return lines
-					end
 				end
-				return {
-					[[                                                    ]],
-					[[  ███╗   ██╗███████╗██████╗ ██╗   ██╗██╗███╗   ███╗  ]],
-					[[  ████╗  ██║██╔════╝██╔══██╗██║   ██║██║████╗ ████║  ]],
-					[[  ██╔██╗ ██║█████╗  ██║  ██║██║   ██║██║██╔████╔██║  ]],
-					[[  ██║╚██╗██║██╔══╝  ██║  ██║╚██╗ ██╔╝██║██║╚██╔╝██║  ]],
-					[[  ██║ ╚████║███████╗██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║  ]],
-					[[  ╚═╝  ╚═══╝╚══════╝╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝  ]],
-					[[                                                    ]],
-				}
+
+				if #lines == 0 then
+					lines = {
+						[[                                                    ]],
+						[[  ███╗   ██╗███████╗██████╗ ██╗   ██╗██╗███╗   ███╗  ]],
+						[[  ████╗  ██║██╔════╝██╔══██╗██║   ██║██║████╗ ████║  ]],
+						[[  ██╔██╗ ██║█████╗  ██║  ██║██║   ██║██║██╔████╔██║  ]],
+						[[  ██║╚██╗██║██╔══╝  ██║  ██║╚██╗ ██╔╝██║██║╚██╔╝██║  ]],
+						[[  ██║ ╚████║███████╗██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║  ]],
+						[[  ╚═╝  ╚═══╝╚══════╝╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝  ]],
+						[[                                                    ]],
+					}
+				end
+
+				-- Append randomized subtitle below the ASCII header
+				table.insert(lines, "")
+				table.insert(lines, "  " .. get_random_quote())
+				table.insert(lines, "")
+				return lines
 			end
 
 			dashboard.section.header.val = get_header()
