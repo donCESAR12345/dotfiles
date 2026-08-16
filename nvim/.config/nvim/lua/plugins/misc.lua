@@ -78,6 +78,28 @@ local plugins = {
 				return quotes[math.random(#quotes)]
 			end
 
+			-- Wrap long text lines to fit narrow/half-screen windows (max 45 chars per line)
+			local function wrap_text(str, max_width)
+				max_width = max_width or 45
+				local lines = {}
+				local current_line = ""
+
+				for word in str:gmatch("%S+") do
+					if #current_line == 0 then
+						current_line = word
+					elseif #current_line + 1 + #word <= max_width then
+						current_line = current_line .. " " .. word
+					else
+						table.insert(lines, current_line)
+						current_line = word
+					end
+				end
+				if #current_line > 0 then
+					table.insert(lines, current_line)
+				end
+				return lines
+			end
+
 			-- Load custom header from header.txt if present, otherwise fallback to default ASCII logo
 			local function get_header()
 				local header_path = vim.fn.stdpath("config") .. "/header.txt"
@@ -103,9 +125,12 @@ local plugins = {
 					}
 				end
 
-				-- Append randomized subtitle below the ASCII header
+				-- Append randomized subtitle below the ASCII header with auto-wrapping
 				table.insert(lines, "")
-				table.insert(lines, "  " .. get_random_quote())
+				local quote_lines = wrap_text(get_random_quote(), 45)
+				for _, ql in ipairs(quote_lines) do
+					table.insert(lines, "  " .. ql)
+				end
 				table.insert(lines, "")
 				return lines
 			end
