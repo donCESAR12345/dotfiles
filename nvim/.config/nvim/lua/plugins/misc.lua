@@ -19,14 +19,23 @@ local plugins = {
 
 			-- Default list of randomized subtitles
 			local default_quotes = {
-				"🚀 Innovación y desarrollo en GITA",
-				"💡 Programando el futuro, una línea a la vez",
-				"🔥 Que el código te acompañe",
-				"⚡ Ready to build amazing things",
-				"🧠 Keep calm and code on",
-				"✨ Transformando ideas en software",
-				"☕ Powered by coffee and passion",
-				"🔬 Grupo de Investigación GITA <3",
+				"🇨🇴 `sudo pacman -S tinto` — Compilando desde Medellín 🌺",
+				"🐍 `import mine` — Minando diamantes en Minecraft a 60 FPS ⛏️",
+				"⚔️ Exterminate en Eris completado con un script de Python 🤖",
+				"👺 ¡WOAH! Aku Aku te protege contra los `segmentation fault` 📦",
+				"🌲 Picando madera en Minecraft mientras compilo el Kernel de Linux 🐧",
+				"🔬 Ciencia Abierta: ¡Conocimiento libre sin DRM ni paywalls! 🌐",
+				"🌌 Viajando en la nave de Starbound con un tinto colombiano ☕✨",
+				"📶 `ping 8.8.8.8` — Modulando telecomunicaciones contra el Moon Lord 🐙",
+				"🔮 Wakfu y Stasis equilibrados con un `try-except` en Python ⚖️",
+				"💥 Crash Bandicoot rompiendo cajas de TNT cuando encuentra un bug 💣",
+				"🛡️ `sudo chown -R tenno:orokin /system` — Ciencia abierta en el Sistema Origen 🚀",
+				"🧱 ¿Para qué Redstone si puedes diseñar telecomunicaciones en Python? 🔌",
+				"🌿 Terraria Guide: +100 de velocidad al programar en Linux con tinto ☕",
+				"🐧 Rule #1 en Linux: Never dig straight down unless it's `cd ~/.config` ⛏️",
+				"📡 Telecomunicaciones + Ciencia Abierta = Conocimiento sin latencia 🌐",
+				"💎 `pip install aku-aku` — ¡Invulnerable a errores de sintaxis! 👺",
+				"🔬 Grupo de Investigación GITA — Ciencia Abierta & Telecomunicaciones <3",
 			}
 
 			-- Load quotes from quotes.txt if present, otherwise fallback to default list
