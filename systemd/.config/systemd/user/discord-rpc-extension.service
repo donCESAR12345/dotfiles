@@ -1,0 +1,12 @@
+[Unit]
+Description=Discord RPC Extension
+# Note: Since the Discord service ID is dynamic, we should use a more generic dependency if possible,
+# or simply start it alongside Discord if Discord were also managed by a persistent systemd service.
+# For now, we rely on manual start or a target-based approach.
+
+[Service]
+ExecStart=/usr/bin/discord-rpc-extension
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
