@@ -1,2 +1,2 @@
 [general]
-import = ["~/.config/alacritty/themes/gruvbox_light.toml"]
+import = ["~/.config/alacritty/themes/catppuccin_latte.toml"]
