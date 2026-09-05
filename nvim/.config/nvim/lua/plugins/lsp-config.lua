@@ -52,6 +52,7 @@ local plugins = {
 				"terraformls", -- Terraform
 				"ts_ls", -- TypeScript / JavaScript
 				"yamlls", -- YAML
+				"texlab", -- LaTeX
 			}
 
 			for _, server in ipairs(servers) do
@@ -59,6 +60,17 @@ local plugins = {
 					-- lua_ls needs Neovim-specific workspace configuration
 					local specific_config = require("lsp-config.lua_ls").config()
 					vim.lsp.config(server, specific_config)
+				elseif server == "texlab" then
+					local texlab_config = vim.tbl_deep_extend("force", default_config, {
+						settings = {
+							texlab = {
+								build = {
+									onSave = false,
+								},
+							},
+						},
+					})
+					vim.lsp.config(server, texlab_config)
 				else
 					vim.lsp.config(server, default_config)
 				end
