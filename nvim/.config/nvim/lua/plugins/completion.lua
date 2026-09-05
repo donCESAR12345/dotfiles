@@ -29,6 +29,10 @@ local plugins = {
 	{ "hrsh7th/cmp-nvim-lsp" },
 	{ "hrsh7th/cmp-path" },
 	{ "hrsh7th/cmp-buffer" },
+	{
+		"micangl/cmp-vimtex",
+		ft = { "tex", "plaintex", "bib" },
+	},
 
 	-- AI completion (Windsurf / Codeium)
 	{
@@ -76,6 +80,7 @@ local plugins = {
 
 			-- Source labels shown on the right of each item
 			local source_labels = {
+				vimtex = "[TeX]",
 				codeium = "[AI]",
 				luasnip = "[Snip]",
 				nvim_lsp = "[LSP]",
@@ -156,6 +161,7 @@ local plugins = {
 				}),
 
 				sources = cmp.config.sources({
+					{ name = "vimtex" },
 					{ name = "codeium" }, -- AI suggestions first
 					{ name = "luasnip" },
 					{ name = "nvim_lsp" },
