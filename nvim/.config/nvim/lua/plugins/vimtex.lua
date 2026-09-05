@@ -186,6 +186,20 @@ M.init = function()
       vim.keymap.set("n", "<localleader>ll", compile_latex, { buffer = ev.buf, silent = true, desc = "LaTeX: Compilar PDF" })
       -- <localleader>lv to view PDF in Okular
       vim.keymap.set("n", "<localleader>lv", open_pdf_in_okular, { buffer = ev.buf, silent = true, desc = "LaTeX: Ver PDF en Okular" })
+      -- <localleader>if to insert figure skeleton
+      vim.keymap.set("n", "<localleader>if", function()
+        local skeleton = {
+          "\\begin{figure}[htbp]",
+          "    \\centering",
+          "    \\includegraphics[width=0.85\\linewidth]{}",
+          "    \\caption{}",
+          "    \\label{fig:}",
+          "\\end{figure}",
+        }
+        local row, _ = unpack(vim.api.nvim_win_get_cursor(0))
+        vim.api.nvim_buf_set_lines(0, row, row, false, skeleton)
+        vim.api.nvim_win_set_cursor(0, { row + 3, 29 }) -- Place cursor inside \includegraphics{}
+      end, { buffer = ev.buf, silent = true, desc = "LaTeX: Insertar entorno figure" })
     end,
   })
 end
