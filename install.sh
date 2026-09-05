@@ -5,7 +5,7 @@ set -e
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ACTION="stow"
 TARGET_HOME="$HOME"
-ALL_MODULES=(archinstall foot nvim rclone scripts systemd tmux zellij zsh)
+ALL_MODULES=(alacritty archinstall foot ghostty konsole nvim rclone scripts systemd tmux warp zellij zsh)
 SELECTED_MODULES=()
 DRY_RUN=""
 

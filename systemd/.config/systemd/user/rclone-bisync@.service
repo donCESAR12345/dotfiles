@@ -20,7 +20,7 @@ ExecStart=/usr/bin/rclone bisync \
     --drive-export-formats link.html \
     --fix-case \
     --log-file ${LOG_FILE} \
-    --log-level INFO
+    --log-level NOTICE
 CPUSchedulingPolicy=idle
 IOSchedulingClass=idle
 KillSignal=SIGINT

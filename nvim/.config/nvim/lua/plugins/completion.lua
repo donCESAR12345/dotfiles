@@ -8,7 +8,20 @@ local plugins = {
 			"saadparwaiz1/cmp_luasnip", -- cmp source for LuaSnip
 		},
 		config = function()
+			local luasnip = require("luasnip")
+			local from_lua = require("luasnip.loaders.from_lua")
 			require("luasnip.loaders.from_vscode").lazy_load()
+			from_lua.lazy_load({
+				paths = { vim.fn.stdpath("config") .. "/snippets" },
+			})
+
+			local orig_get_snippets = luasnip.get_snippets
+			luasnip.get_snippets = function(ft, opts)
+				if ft then
+					from_lua._load_lazy_loaded_ft(ft)
+				end
+				return orig_get_snippets(ft, opts)
+			end
 		end,
 	},
 
@@ -16,6 +29,10 @@ local plugins = {
 	{ "hrsh7th/cmp-nvim-lsp" },
 	{ "hrsh7th/cmp-path" },
 	{ "hrsh7th/cmp-buffer" },
+	{
+		"micangl/cmp-vimtex",
+		ft = { "tex", "plaintex", "bib" },
+	},
 
 	-- AI completion (Windsurf / Codeium)
 	{
@@ -63,6 +80,7 @@ local plugins = {
 
 			-- Source labels shown on the right of each item
 			local source_labels = {
+				vimtex = "[TeX]",
 				codeium = "[AI]",
 				luasnip = "[Snip]",
 				nvim_lsp = "[LSP]",
@@ -143,6 +161,7 @@ local plugins = {
 				}),
 
 				sources = cmp.config.sources({
+					{ name = "vimtex" },
 					{ name = "codeium" }, -- AI suggestions first
 					{ name = "luasnip" },
 					{ name = "nvim_lsp" },
