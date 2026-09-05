@@ -8,7 +8,20 @@ local plugins = {
 			"saadparwaiz1/cmp_luasnip", -- cmp source for LuaSnip
 		},
 		config = function()
+			local luasnip = require("luasnip")
+			local from_lua = require("luasnip.loaders.from_lua")
 			require("luasnip.loaders.from_vscode").lazy_load()
+			from_lua.lazy_load({
+				paths = { vim.fn.stdpath("config") .. "/snippets" },
+			})
+
+			local orig_get_snippets = luasnip.get_snippets
+			luasnip.get_snippets = function(ft, opts)
+				if ft then
+					from_lua._load_lazy_loaded_ft(ft)
+				end
+				return orig_get_snippets(ft, opts)
+			end
 		end,
 	},
 
