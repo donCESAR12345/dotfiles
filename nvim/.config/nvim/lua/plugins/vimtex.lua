@@ -7,6 +7,19 @@ local M = {
 local last_compiled_pdf = nil
 local last_project_root = nil
 local compile_job_id = nil
+local opened_pdfs = {}
+local socket_file = "/tmp/nvim-latex-socket"
+
+local function update_nvim_latex_socket()
+  local servername = vim.v.servername
+  if servername and servername ~= "" then
+    local f = io.open(socket_file, "w")
+    if f then
+      f:write(servername)
+      f:close()
+    end
+  end
+end
 
 -- Walk up directory tree starting from start_path to locate a Makefile
 local function find_project_root(start_path)
@@ -49,6 +62,55 @@ local function resolve_pdf_target(root, file_path)
   end
   
   return nil
+end
+
+-- Launch Okular asynchronously with SyncTeX forward search in a detached process
+local function open_pdf_in_okular(custom_target, custom_file_path, custom_line)
+  if type(custom_target) ~= "string" then
+    custom_target = nil
+  end
+  local file_path = custom_file_path or vim.api.nvim_buf_get_name(0)
+  if file_path == "" then return end
+  
+  local root = find_project_root(vim.fn.fnamemodify(file_path, ":p:h"))
+  root = root or last_project_root
+  
+  if not root then
+    vim.notify("No se encontró la raíz del proyecto (Makefile).", vim.log.levels.WARN, { title = "LaTeX View" })
+    return
+  end
+  
+  local target = custom_target or resolve_pdf_target(root, file_path)
+  target = target or last_compiled_pdf
+  
+  if not target then
+    vim.notify("No se pudo determinar el PDF a abrir.", vim.log.levels.WARN, { title = "LaTeX View" })
+    return
+  end
+  
+  local pdf_full_path = root .. "/" .. target
+  if vim.fn.filereadable(pdf_full_path) == 0 then
+    vim.notify("El archivo PDF aún no existe: " .. target .. "\nPor favor, compila primero.", vim.log.levels.WARN, { title = "LaTeX View" })
+    return
+  end
+  
+  if vim.fn.executable("okular") ~= 1 then
+    vim.notify("El visor 'okular' no está instalado o no se encuentra en el PATH.", vim.log.levels.ERROR, { title = "LaTeX View" })
+    return
+  end
+  
+  -- Update socket file so inverse search can reach this instance
+  update_nvim_latex_socket()
+  
+  local line = custom_line or vim.api.nvim_win_get_cursor(0)[1]
+  local tex_full_path = vim.fn.fnamemodify(file_path, ":p")
+  local target_arg = string.format("file:%s#src:%d %s", pdf_full_path, line, tex_full_path)
+  
+  vim.notify("Abriendo " .. target .. " en Okular (Línea " .. line .. ")...", vim.log.levels.INFO, { title = "LaTeX View" })
+  local job_id = vim.fn.jobstart({ "okular", "--unique", target_arg }, { detach = true })
+  if job_id > 0 then
+    opened_pdfs[target] = true
+  end
 end
 
 -- Asynchronously execute the compilation using Neovim's jobstart
@@ -109,6 +171,9 @@ local function compile_latex()
       compile_job_id = nil
       if exit_code == 0 then
         vim.notify("¡Compilación exitosa!\n" .. target, vim.log.levels.INFO, { title = "LaTeX Build" })
+        if not opened_pdfs[target] then
+          open_pdf_in_okular(target, file_path)
+        end
       else
         vim.notify("Fallo en la compilación de:\n" .. target, vim.log.levels.ERROR, { title = "LaTeX Build" })
         
@@ -122,37 +187,6 @@ local function compile_latex()
       end
     end
   })
-end
-
--- Launch Okular asynchronously in a detached process
-local function open_pdf_in_okular()
-  local file_path = vim.api.nvim_buf_get_name(0)
-  if file_path == "" then return end
-  
-  local root = find_project_root(vim.fn.fnamemodify(file_path, ":p:h"))
-  root = root or last_project_root
-  
-  if not root then
-    vim.notify("No se encontró la raíz del proyecto (Makefile).", vim.log.levels.WARN, { title = "LaTeX View" })
-    return
-  end
-  
-  local target = resolve_pdf_target(root, file_path)
-  target = target or last_compiled_pdf
-  
-  if not target then
-    vim.notify("No se pudo determinar el PDF a abrir.", vim.log.levels.WARN, { title = "LaTeX View" })
-    return
-  end
-  
-  local pdf_full_path = root .. "/" .. target
-  if vim.fn.filereadable(pdf_full_path) == 0 then
-    vim.notify("El archivo PDF aún no existe: " .. target .. "\nPor favor, compila primero.", vim.log.levels.WARN, { title = "LaTeX View" })
-    return
-  end
-  
-  vim.notify("Abriendo " .. target .. " en Okular...", vim.log.levels.INFO, { title = "LaTeX View" })
-  vim.fn.jobstart({ "okular", pdf_full_path }, { detach = true })
 end
 
 local function insert_figure_skeleton()
@@ -187,9 +221,18 @@ M.init = function()
     end,
   })
   
+  -- Refresh active socket when editing or switching to a TeX buffer
+  vim.api.nvim_create_autocmd({ "BufEnter", "FileType" }, {
+    group = group,
+    pattern = { "*.tex", "tex" },
+    callback = function()
+      update_nvim_latex_socket()
+    end,
+  })
+  
   -- Register commands
-  vim.api.nvim_create_user_command("VimtexMakeCompile", compile_latex, {})
-  vim.api.nvim_create_user_command("VimtexMakeView", open_pdf_in_okular, {})
+  vim.api.nvim_create_user_command("VimtexMakeCompile", function() compile_latex() end, {})
+  vim.api.nvim_create_user_command("VimtexMakeView", function() open_pdf_in_okular() end, {})
   
   -- Local keymaps for TeX buffers
   vim.api.nvim_create_autocmd("FileType", {
