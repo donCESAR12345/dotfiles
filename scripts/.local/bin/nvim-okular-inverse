@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# nvim-okular-inverse: Bridge between Okular and Neovim for SyncTeX inverse search
+set -e
+
+FILE="$1"
+LINE="$2"
+SOCKET_FILE="/tmp/nvim-latex-socket"
+
+if [[ -z "$FILE" ]]; then
+    echo "Usage: $(basename "$0") <file> [line]" >&2
+    exit 1
+fi
+
+[[ "$LINE" =~ ^[0-9]+$ ]] || LINE=1
+ESCAPED_FILE="${FILE// /\\ }"
+
+if [[ -f "$SOCKET_FILE" ]]; then
+    SERVER=$(cat "$SOCKET_FILE" 2>/dev/null)
+    if [[ -n "$SERVER" && -S "$SERVER" ]]; then
+        if nvim --server "$SERVER" --remote-send "<C-\><C-N>:edit +${LINE} ${ESCAPED_FILE}<CR>" 2>/dev/null; then
+            exit 0
+        fi
+    fi
+fi
+
+# Fallback if no active Neovim server socket is found
+if command -v kate &>/dev/null; then
+    exec kate --line "$LINE" "$FILE"
+else
+    echo "Warning: No active Neovim socket found at $SOCKET_FILE" >&2
+    exit 1
+fi
