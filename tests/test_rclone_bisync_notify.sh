@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_UNDER_TEST="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.local/bin" && pwd)/rclone-bisync-notify-failed"
+SCRIPT_UNDER_TEST="$(cd "$(dirname "${BASH_SOURCE[0]}")/../scripts/.local/bin" && pwd)/rclone-bisync-notify-failed"
 TEMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
