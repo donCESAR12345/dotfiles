@@ -21,6 +21,7 @@ run_test() {
     local test_name="$1"
     local log_content="$2"
     local expected_cause="$3"
+    local expected_detail="${4:-}"
     
     local test_log="$TEMP_DIR/test.log"
     printf "%s\n" "$log_content" > "$test_log"
@@ -28,12 +29,21 @@ run_test() {
     local output
     output=$(PATH="$mock_bin:$PATH" "$SCRIPT_UNDER_TEST" "testprofile" "$test_log" 2>&1) || true
     
-    if echo "$output" | grep -Fq "<b>Causa:</b> $expected_cause"; then
+    local pass=true
+    if ! printf '%s\n' "$output" | grep -Fq "<b>Causa:</b> $expected_cause"; then
+        pass=false
+    fi
+    if [[ -n "$expected_detail" ]] && ! printf '%s\n' "$output" | grep -Fq "$expected_detail"; then
+        pass=false
+    fi
+
+    if [ "$pass" = true ]; then
         echo "[PASS] $test_name"
         passed=$((passed + 1))
     else
         echo "[FAIL] $test_name"
         echo "Expected cause: $expected_cause"
+        [[ -n "$expected_detail" ]] && echo "Expected detail containing: $expected_detail"
         echo "Actual output:"
         echo "$output"
         failed=$((failed + 1))
@@ -84,7 +94,8 @@ run_test "10. Fallo de Bisync (march failed)" \
 
 run_test "11. Fallback genérico" \
   "2026/09/16 19:00:00 ERROR : unexpected internal failure occurred in engine" \
-  "Error en sincronización de Rclone"
+  "Error en sincronización de Rclone" \
+  "unexpected internal failure occurred in engine"
 
 echo ""
 echo "Resumen: $passed pasadas, $failed falladas."
