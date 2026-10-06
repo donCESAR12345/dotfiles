@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Argumento requerido: nombre de perfil (ej. gdrive-personal, gdrive-udea, gdrive-lafi)
+PROFILE="${1:-}"
+OVERRIDE_LOG="${2:-}"
+
+if [[ -z "$PROFILE" ]]; then
+    echo "Uso: $(basename "$0") <perfil> [ruta_log_opcional]" >&2
+    exit 1
+fi
+
+# Determinar ruta del log
+LOG_FILE=""
+if [[ -n "$OVERRIDE_LOG" ]]; then
+    LOG_FILE="$OVERRIDE_LOG"
+else
+    ENV_FILE="$HOME/.config/rclone/sync-${PROFILE}.env"
+    if [[ -f "$ENV_FILE" ]]; then
+        # Extraer LOG_FILE del archivo .env si está definido
+        LOG_FILE=$(grep -E '^LOG_FILE=' "$ENV_FILE" 2>/dev/null | cut -d '=' -f2- | tr -d '"' | tr -d "'") || true
+    fi
+    # Fallback predeterminado
+    if [[ -z "$LOG_FILE" ]]; then
+        LOG_FILE="$HOME/.local/state/rclone/${PROFILE}.log"
+    fi
+fi
+
+CAUSE=""
+DETAIL=""
+
+if [[ ! -f "$LOG_FILE" ]]; then
+    CAUSE="Archivo de registro no encontrado"
+    DETAIL="No se encontró el archivo de log en $LOG_FILE"
+elif [[ ! -s "$LOG_FILE" ]]; then
+    CAUSE="Archivo de registro vacío"
+    DETAIL="El archivo de log en $LOG_FILE está vacío (0 bytes)."
+else
+    # Extraer las últimas 100 líneas del log para analizar el evento reciente
+    RECENT_LOG=$(tail -n 100 "$LOG_FILE" 2>/dev/null || true)
+    
+    # Extraer las líneas de error más recientes (CRITICAL o ERROR)
+    ERROR_LINES=$(printf '%s\n' "$RECENT_LOG" | grep -E "(CRITICAL|ERROR)[[:space:]]*: " | tail -n 10 || true)
+    
+    # Evaluar patrones jerárquicamente
+    if printf '%s\n' "$RECENT_LOG" | grep -Eqi "tls: failed to verify certificate.*udea\.edu\.co"; then
+        CAUSE="Portal cautivo de red UdeA interceptando tráfico HTTPS"
+        DETAIL="La red requiere autenticación en el portal web o está interceptando los certificados de Google."
+    elif printf '%s\n' "$RECENT_LOG" | grep -Eqi "invalid_grant|Token has been expired or revoked|failed to refresh token"; then
+        CAUSE="Credenciales OAuth expiradas o revocadas (re-autenticar)"
+        DETAIL="El token de acceso de Google expiró. Ejecuta en terminal: rclone config reconnect ${PROFILE}:"
+    elif printf '%s\n' "$RECENT_LOG" | grep -Eqi "Safety abort.*deletion|exceeded delete limit"; then
+        CAUSE="Límite de borrado de seguridad excedido (--max-delete)"
+        DETAIL="Se superó el umbral de eliminaciones permitidas. Revisa los cambios locales y remotos."
+    elif printf '%s\n' "$RECENT_LOG" | grep -Eqi "prior lock file found|bisync is already running|cannot acquire lock"; then
+        CAUSE="Sincronización bloqueada (lock previo activo)"
+        DETAIL="Existe una sesión de sincronización previa en ejecución o un archivo de bloqueo (.lck) huérfano."
+    elif printf '%s\n' "$RECENT_LOG" | grep -Eqi "Must use --resync|resync required"; then
+        CAUSE="Desincronización crítica (requiere --resync)"
+        DETAIL="Los árboles de directorios están desfasados. Es necesario ejecutar manualmente con la opción --resync."
+    elif printf '%s\n' "$RECENT_LOG" | grep -Eqi "googleapi: got HTTP response code 429"; then
+        CAUSE="Límite de peticiones de Google Drive (HTTP 429)"
+        DETAIL="Google bloqueó temporalmente las solicitudes por detección de consultas automatizadas."
+    elif printf '%s\n' "$RECENT_LOG" | grep -Eqi "storageQuotaExceeded|quotaExceeded|no space left on device"; then
+        CAUSE="Espacio de almacenamiento lleno (Drive o disco local)"
+        DETAIL="No hay suficiente espacio libre en la cuenta de Google Drive o en el disco local."
+    elif printf '%s\n' "$RECENT_LOG" | grep -Eqi "Temporary failure in name resolution|no such host|network is unreachable"; then
+        CAUSE="Sin conexión a Internet o falla de resolución DNS"
+        DETAIL="No se pudo contactar los servidores de Google Drive. Verifica tu conexión de red o DNS."
+    elif printf '%s\n' "$RECENT_LOG" | grep -Eqi "directory not found|no such file or directory"; then
+        CAUSE="Directorio local o remoto inaccesible"
+        DETAIL="No se pudo acceder a la carpeta de origen o destino configurada en el perfil."
+    elif printf '%s\n' "$RECENT_LOG" | grep -Eqi "march failed with|Bisync critical error"; then
+        CAUSE="Fallo crítico en Bisync (abortado de forma segura)"
+        DETAIL="Ocurrió un fallo durante la comparación de archivos. Bisync abortó para proteger los datos."
+    else
+        CAUSE="Error en sincronización de Rclone"
+        # Tomar la última línea de error o crítico, limpiando marcas temporales largas
+        LAST_ERROR=$(printf '%s\n' "$ERROR_LINES" | tail -n 1)
+        if [[ -n "$LAST_ERROR" ]]; then
+            # Remover fecha/hora inicial tipo "2026/09/16 12:46:32 "
+            DETAIL=$(printf '%s\n' "$LAST_ERROR" | sed -E 's/^[0-9\/]+ [0-9:]+ //')
+            # Truncar si es excesivamente largo (ej. cuerpos HTML)
+            if [[ ${#DETAIL} -gt 160 ]]; then
+                DETAIL="${DETAIL:0:157}..."
+            fi
+        else
+            DETAIL="Revisa los registros para más información."
+        fi
+    fi
+fi
+
+# Sanitizar posibles caracteres especiales o tags no deseados en PROFILE, LOG_FILE y DETAIL
+CLEAN_PROFILE=$(printf '%s\n' "$PROFILE" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')
+CLEAN_LOG_FILE=$(printf '%s\n' "$LOG_FILE" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')
+CLEAN_DETAIL=$(printf '%s\n' "$DETAIL" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')
+
+NOTIFICATION_BODY="<b>Causa:</b> ${CAUSE}
+<b>Detalle:</b> ${CLEAN_DETAIL}
+<b>Log:</b> ${CLEAN_LOG_FILE}"
+
+notify-send -u critical -i dialog-error \
+    "Error de Sincronización: ${CLEAN_PROFILE}" \
+    "$NOTIFICATION_BODY"

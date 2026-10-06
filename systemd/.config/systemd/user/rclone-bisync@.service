@@ -2,7 +2,7 @@
 Description=Bidirectional sync via Rclone (%i)
 After=network-online.target
 Wants=network-online.target
-OnFailure=notify-failed@%n.service
+OnFailure=notify-rclone-bisync-failed@%i.service
 
 [Service]
 Type=oneshot

@@ -1,0 +1,6 @@
+[Unit]
+Description=Notification for failed rclone bisync service (%i)
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/rclone-bisync-notify-failed %i
