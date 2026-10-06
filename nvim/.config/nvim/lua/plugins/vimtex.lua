@@ -41,7 +41,11 @@ local function resolve_pdf_target(root, file_path)
   -- If the file belongs to a specific module
   if rel_path:match("^modules/") then
     local parts = vim.split(rel_path, "/")
-    if #parts >= 4 then
+    if parts[3] == "oral_evals" then
+      -- modules/<mod>/oral_evals/questions/<file>.tex -> modules/<mod>/oral_evals/teacher/<file>.pdf
+      local base_name = parts[#parts]:gsub("%.tex$", "")
+      return table.concat({parts[1], parts[2], parts[3], "teacher", base_name .. ".pdf"}, "/")
+    elseif #parts >= 4 then
       if #parts == 4 then
         -- modules/<mod>/<doc_type>/<file>.tex -> modules/<mod>/<doc_type>/<file>.pdf
         local base_name = parts[4]:gsub("%.tex$", "")
