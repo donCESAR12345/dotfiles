@@ -1,15 +1,217 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Si el agente ya tiene llaves, no hacemos nada y saltamos al comando
-if ! ssh-add -l &> /dev/null; then
-    echo "🔐 SSH Agent vacío. Invocando KeePassXC..."
-    keepassxc &> /dev/null & disown
-    until ssh-add -l &> /dev/null
-    do
-        sleep 1
-    done
-    echo "✅ Llaves inyectadas."
+# keepassxc-prompt: Asistente inteligente para OpenSSH y KeePassXC.
+# - Verifica si el host de destino realmente utiliza llaves SSH cifradas.
+# - Si la llave requerida ya está en el agente SSH (o no requiere contraseña), pasa directo.
+# - Si requiere llave y no está en el agente, notifica y trae la ventana de KeePassXC
+#   al frente en el escritorio activo de forma agnóstica al DE (KDE Plasma, GNOME, Hyprland, Sway, i3, X11).
+
+set -u
+
+# Soporte para invocación con 2 argumentos (%h %p) o 3 argumentos (%n %h %p)
+if [[ $# -ge 3 ]]; then
+    target_alias="$1"
+    target_host="$2"
+    target_port="$3"
+elif [[ $# -ge 2 ]]; then
+    target_alias="$1"
+    target_host="$1"
+    target_port="$2"
+else
+    echo "Uso: $0 [<alias>] <host> <port>" >&2
+    exit 1
 fi
 
-# Ejecutar el comando original (nc, git, ssh, etc)
-exec /usr/bin/nc "$1" "$2"
+# 1. Determinar si el destino utiliza llaves SSH cifradas y si ya están en el agente
+needs_keepassxc=false
+missing_key_names=()
+
+ssh_config_dump=$(ssh -G "$target_alias" 2>/dev/null || true)
+pubkey_enabled=$(echo "$ssh_config_dump" | awk '/^pubkeyauthentication / {print $2}')
+preferred_auth=$(echo "$ssh_config_dump" | awk '/^preferredauthentications / {print $2}')
+
+if [[ "$pubkey_enabled" != "no" ]] && [[ "$preferred_auth" == *"publickey"* ]]; then
+    while read -r _ key_path; do
+        [[ -z "$key_path" ]] && continue
+        key_path="${key_path/#\~/$HOME}"
+        if [[ -f "$key_path" ]]; then
+            # Si el archivo de la llave existe y no se puede leer sin contraseña,
+            # verificar si ya está inyectada en el agente SSH
+            if ! ssh-keygen -y -f "$key_path" -P "" &>/dev/null; then
+                is_loaded=false
+                # Verificar fingerprint en ssh-agent si existe llave pública
+                if [[ -f "${key_path}.pub" ]]; then
+                    fp=$(ssh-keygen -l -f "${key_path}.pub" 2>/dev/null | awk '{print $2}')
+                    if [[ -n "$fp" ]] && ssh-add -l 2>/dev/null | grep -qF "$fp"; then
+                        is_loaded=true
+                    fi
+                fi
+                if [[ "$is_loaded" == false ]]; then
+                    needs_keepassxc=true
+                    missing_key_names+=("$(basename "$key_path")")
+                fi
+            fi
+        fi
+    done < <(echo "$ssh_config_dump" | grep -E '^identityfile ' || true)
+fi
+
+# Si no requiere llave cifrada por KeePassXC o ya están cargadas, conectar directamente
+if [[ "$needs_keepassxc" == false ]]; then
+    exec /usr/bin/nc "$target_host" "$target_port"
+fi
+
+# 2. Traer KeePassXC al frente y al escritorio actual de forma agnóstica al DE / WM
+focus_keepassxc() {
+    # Iniciar si no está corriendo o enviar señal para que muestre su interfaz
+    if ! pgrep -x keepassxc >/dev/null 2>&1; then
+        keepassxc &>/dev/null & disown
+        sleep 0.8
+    else
+        keepassxc &>/dev/null & disown
+        sleep 0.2
+    fi
+
+    # Si no hay sesión gráfica activa, retornar
+    [[ -z "${WAYLAND_DISPLAY:-}" && -z "${DISPLAY:-}" ]] && return 0
+
+    local desktop="${XDG_CURRENT_DESKTOP:-${DESKTOP_SESSION:-}}"
+    desktop="${desktop,,}"
+
+    # A. KDE Plasma (KWin en Wayland o X11)
+    if [[ "$desktop" == *"kde"* || "$desktop" == *"plasma"* ]]; then
+        local qdbus_bin=""
+        if command -v qdbus6 >/dev/null 2>&1; then
+            qdbus_bin="qdbus6"
+        elif command -v qdbus >/dev/null 2>&1; then
+            qdbus_bin="qdbus"
+        fi
+
+        if [[ -n "$qdbus_bin" ]]; then
+            local kwin_script='
+                let clients = workspace.windowList();
+                for (let i = 0; i < clients.length; i++) {
+                    let client = clients[i];
+                    if (client.resourceClass && client.resourceClass.toLowerCase().includes("keepassxc")) {
+                        client.minimized = false;
+                        if (workspace.currentVirtualDesktop) {
+                            client.desktops = [workspace.currentVirtualDesktop];
+                        }
+                        workspace.activeWindow = client;
+                        break;
+                    }
+                }
+            '
+            local script_file
+            script_file=$(mktemp /tmp/kwin-focus-keepass-XXXXXX.js 2>/dev/null || echo "/tmp/kwin-focus-keepass-$$.js")
+            echo "$kwin_script" > "$script_file"
+            local script_id
+            script_id=$("$qdbus_bin" org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript "$script_file" 2>/dev/null || true)
+            if [[ -n "$script_id" && "$script_id" =~ ^[0-9]+$ ]]; then
+                "$qdbus_bin" org.kde.KWin "/Scripting/Script$script_id" org.kde.kwin.Script.run &>/dev/null || true
+                "$qdbus_bin" org.kde.KWin "/Scripting/Script$script_id" org.kde.kwin.Script.stop &>/dev/null || true
+            fi
+            rm -f "$script_file"
+            return 0
+        fi
+    fi
+
+    # B. GNOME Shell (Wayland o X11)
+    if [[ "$desktop" == *"gnome"* ]]; then
+        # GNOME activa instancias únicas registradas con SingleMainWindow / X-GNOME-SingleWindow
+        if command -v gtk-launch >/dev/null 2>&1; then
+            gtk-launch org.keepassxc.KeePassXC.desktop &>/dev/null || true
+        elif command -v gio >/dev/null 2>&1; then
+            gio launch /usr/share/applications/org.keepassxc.KeePassXC.desktop &>/dev/null || true
+        fi
+
+        # Si el usuario tiene extensiones para activar ventanas por D-Bus en GNOME Shell
+        if command -v gdbus >/dev/null 2>&1; then
+            gdbus call --session --dest org.gnome.Shell \
+                /de/lucaswerkmeister/ActivateWindowByTitle \
+                de.lucaswerkmeister.ActivateWindowByTitle.activateBySubstring s "KeePassXC" &>/dev/null || true
+        fi
+        return 0
+    fi
+
+    # C. Hyprland (Wayland)
+    if [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && command -v hyprctl >/dev/null 2>&1; then
+        hyprctl dispatch focuswindow "class:^(keepassxc)$" &>/dev/null || true
+        return 0
+    fi
+
+    # D. Sway / i3
+    if [[ -n "${SWAYSOCK:-}" ]] && command -v swaymsg >/dev/null 2>&1; then
+        swaymsg '[app_id="(?i)keepassxc" or class="(?i)keepassxc"] focus' &>/dev/null || true
+        return 0
+    elif [[ -n "${I3SOCK:-}" ]] && command -v i3-msg >/dev/null 2>&1; then
+        i3-msg '[class="(?i)keepassxc"] focus' &>/dev/null || true
+        return 0
+    fi
+
+    # E. Universal X11 / EWMH (XFCE, Cinnamon, MATE, LXQt, etc.)
+    if command -v wmctrl >/dev/null 2>&1; then
+        wmctrl -x -a keepassxc &>/dev/null || wmctrl -a KeePassXC &>/dev/null || true
+        return 0
+    elif command -v xdotool >/dev/null 2>&1; then
+        xdotool search --class keepassxc windowactivate &>/dev/null || true
+        return 0
+    fi
+
+    # F. Fallback general Freedesktop
+    if command -v gtk-launch >/dev/null 2>&1; then
+        gtk-launch org.keepassxc.KeePassXC.desktop &>/dev/null || true
+    elif command -v gio >/dev/null 2>&1; then
+        gio launch /usr/share/applications/org.keepassxc.KeePassXC.desktop &>/dev/null || true
+    fi
+}
+
+# 3. Notificación de escritorio
+key_hint=""
+if [[ ${#missing_key_names[@]} -gt 0 ]]; then
+    key_hint=" (${missing_key_names[*]})"
+fi
+
+if command -v notify-send >/dev/null 2>&1 && [[ -n "${WAYLAND_DISPLAY:-}" || -n "${DISPLAY:-}" ]]; then
+    notify-send -i keepassxc -u normal "KeePassXC SSH" "Se requiere desbloquear llaves para conectar a $target_alias$key_hint" &>/dev/null || true
+fi
+
+echo "🔐 Solicitando desbloqueo en KeePassXC para '$target_alias'$key_hint..." >&2
+focus_keepassxc
+
+# 4. Esperar a que se inyecten las llaves con un timeout de seguridad (60s)
+timeout=60
+elapsed=0
+while true; do
+    # Comprobar si las llaves pendientes ya están presentes en el agente
+    all_resolved=true
+    if [[ ${#missing_key_names[@]} -gt 0 ]]; then
+        for k_name in "${missing_key_names[@]}"; do
+            if ! ssh-add -l &>/dev/null; then
+                all_resolved=false
+                break
+            fi
+        done
+    else
+        if ! ssh-add -l &>/dev/null; then
+            all_resolved=false
+        fi
+    fi
+
+    if [[ "$all_resolved" == true ]]; then
+        break
+    fi
+
+    if [[ $elapsed -ge $timeout ]]; then
+        echo "⚠️ Tiempo de espera agotado (60s). Continuando sin llaves inyectadas..." >&2
+        break
+    fi
+    sleep 1
+    ((elapsed++))
+done
+
+if ssh-add -l &>/dev/null; then
+    echo "✅ Llaves listas." >&2
+fi
+
+# Ejecutar el comando de transporte
+exec /usr/bin/nc "$target_host" "$target_port"
