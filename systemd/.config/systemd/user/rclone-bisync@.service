@@ -6,17 +6,19 @@ OnFailure=notify-rclone-bisync-failed@%i.service
 
 [Service]
 Type=oneshot
+Environment="FILTER_FILE=%h/.config/rclone/filters.txt"
 EnvironmentFile=%h/.config/rclone/sync-%i.env
 ExecStart=/usr/bin/rclone bisync \
     ${LOCAL_PATH} \
     ${REMOTE_PATH} \
     --bwlimit ${BWLIMIT} \
-    --filter-from %h/.config/rclone/filters.txt \
+    --filter-from ${FILTER_FILE} \
     --compare modtime,size \
     --conflict-resolve newer \
     --max-delete 90 \
     --resilient \
     --recover \
+    --max-lock 1h \
     --drive-export-formats link.html \
     --fix-case \
     --log-file ${LOG_FILE} \
@@ -24,6 +26,7 @@ ExecStart=/usr/bin/rclone bisync \
 CPUSchedulingPolicy=idle
 IOSchedulingClass=idle
 KillSignal=SIGINT
+TimeoutStopSec=15s
 
 [Install]
 WantedBy=default.target
