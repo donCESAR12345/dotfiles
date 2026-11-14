@@ -1,4 +1,5 @@
-\.example$
-^sync-.*\.env$
-\.bak(\..*)?$
-\.stow-local-ignore$
+.*\.example$
+.*-example\.env$
+(^|/)sync-.*\.env$
+.*\.bak(\..*)?$
+(^|/)\.stow-local-ignore$

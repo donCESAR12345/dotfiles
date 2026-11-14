@@ -29,6 +29,6 @@ done
 if command -v kate &>/dev/null; then
     exec kate --line "$LINE" "$FILE"
 else
-    echo "Warning: No active Neovim socket found at $SOCKET_FILE" >&2
+    echo "Warning: No active Neovim socket found at $SOCKET_FILE or $FALLBACK_SOCKET_FILE" >&2
     exit 1
 fi

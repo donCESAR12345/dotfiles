@@ -16,19 +16,21 @@ fi
 # ==============================================================================
 # 2. PLUGINS
 # ==============================================================================
-# Loaded with turbo mode (deferred) to keep startup fast
-zinit ice wait'0' lucid; zinit light zsh-users/zsh-syntax-highlighting
-zinit ice wait'0' lucid; zinit light zsh-users/zsh-autosuggestions
-zinit ice wait'0' lucid; zinit light Aloxaf/fzf-tab
-zinit ice wait'1' lucid; zinit light zsh-users/zsh-completions
+if (( $+functions[zinit] )); then
+    # Loaded with turbo mode (deferred) to keep startup fast
+    zinit ice wait'0' lucid; zinit light zsh-users/zsh-syntax-highlighting
+    zinit ice wait'0' lucid; zinit light zsh-users/zsh-autosuggestions
+    zinit ice wait'0' lucid; zinit light Aloxaf/fzf-tab
+    zinit ice wait'1' lucid; zinit light zsh-users/zsh-completions
 
-# Oh My Zsh snippets
-zinit snippet OMZP::git
-zinit snippet OMZP::podman
-zinit snippet OMZP::colored-man-pages
-zinit snippet OMZP::archlinux
-zinit snippet OMZP::extract
-zinit snippet OMZP::command-not-found
+    # Oh My Zsh snippets
+    zinit snippet OMZP::git
+    zinit snippet OMZP::podman
+    zinit snippet OMZP::colored-man-pages
+    zinit snippet OMZP::archlinux
+    zinit snippet OMZP::extract
+    zinit snippet OMZP::command-not-found
+fi
 
 # ==============================================================================
 # 3. COMPLETION
@@ -36,7 +38,7 @@ zinit snippet OMZP::command-not-found
 mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
 autoload -Uz compinit
 compinit -d "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump-${ZSH_VERSION}"
-zinit cdreplay -q  # Replay cached completions from turbo-loaded plugins
+(( $+functions[zinit] )) && zinit cdreplay -q  # Replay cached completions from turbo-loaded plugins
 
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"

@@ -1,4 +1,4 @@
-^README\.md$
-\.example$
-\.bak(\..*)?$
-\.stow-local-ignore$
+(^|/)README\.md$
+.*\.example$
+.*\.bak(\..*)?$
+(^|/)\.stow-local-ignore$

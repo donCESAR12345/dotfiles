@@ -23,6 +23,7 @@ else
         LOG_FILE=$(grep -E '^(export[[:space:]]+)?LOG_FILE=' "$ENV_FILE" 2>/dev/null | tail -n 1 | sed -E "s/^(export[[:space:]]+)?LOG_FILE=//; s/^['\"]//; s/['\"]$//" || true)
         LOG_FILE="${LOG_FILE/#\~/$HOME}"
         LOG_FILE="${LOG_FILE//\$HOME/$HOME}"
+        LOG_FILE="${LOG_FILE//\$\{HOME\}/$HOME}"
     fi
     # Fallback predeterminado
     if [[ -z "$LOG_FILE" ]]; then
@@ -105,7 +106,7 @@ NOTIFICATION_BODY="<b>Causa:</b> ${CAUSE}
 
 if command -v notify-send >/dev/null 2>&1; then
     notify-send -u critical -i dialog-error \
-        "Error de Sincronización: ${CLEAN_PROFILE}" \
+        "Error de Sincronización: ${PROFILE}" \
         "$NOTIFICATION_BODY" || true
 else
     printf 'Error de Sincronización (%s): %s - %s\n' "$PROFILE" "$CAUSE" "$DETAIL" >&2

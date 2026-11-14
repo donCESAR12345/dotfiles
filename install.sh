@@ -11,7 +11,9 @@ FAILED_MODULES=()
 STOW_IGNORE_ARGS=(
     --ignore='(^|/)README\.md$'
     --ignore='\.example$'
+    --ignore='-example\.env$'
     --ignore='\.bak(\..*)?$'
+    --ignore='\.zwc$'
     --ignore='(^|/)\.env$'
     --ignore='(^|/)sync-.*\.env$'
     --ignore='(^|/)config\.local$'
@@ -108,16 +110,18 @@ fi
 cd "$DOTFILES_DIR"
 
 # Pre-create XDG target directories so stow links files instead of folding entire trees
-info "Preparing target directories in $TARGET_HOME..."
-mkdir -p \
-    "$TARGET_HOME/.config/systemd/user" \
-    "$TARGET_HOME/.config/zsh" \
-    "$TARGET_HOME/.local/bin" \
-    "$TARGET_HOME/.local/share/applications" \
-    "$TARGET_HOME/.local/share/konsole" \
-    "$TARGET_HOME/.local/state/zsh" \
-    "$TARGET_HOME/.cache/zsh"
-ok "Target directories ready."
+if [[ "$ACTION" == "stow" && ${#STOW_DRY_RUN[@]} -eq 0 ]]; then
+    info "Preparing target directories in $TARGET_HOME..."
+    mkdir -p \
+        "$TARGET_HOME/.config/systemd/user" \
+        "$TARGET_HOME/.config/zsh" \
+        "$TARGET_HOME/.local/bin" \
+        "$TARGET_HOME/.local/share/applications" \
+        "$TARGET_HOME/.local/share/konsole" \
+        "$TARGET_HOME/.local/state/zsh" \
+        "$TARGET_HOME/.cache/zsh"
+    ok "Target directories ready."
+fi
 
 for module in "${SELECTED_MODULES[@]}"; do
     if [[ ! -d "$DOTFILES_DIR/$module" ]]; then

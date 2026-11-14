@@ -225,7 +225,7 @@ Neovim is configured as a **modular, high-performance IDE**, optimized for Pytho
   * Managed by `conform.nvim`
   * Tooling:
 
-    * Python: `ruff`, `black`
+    * Python: `ruff` (`ruff_format`)
     * Frontend: `prettierd`
     * Lua: `stylua`
 
@@ -328,15 +328,15 @@ If you prefer to manage symlinks manually without using `./install.sh`, you can 
 
 ```bash
 # Stow individual modules into $HOME
-stow zsh -t ~
-stow nvim -t ~
-stow scripts -t ~
+stow --no-folding zsh -t ~
+stow --no-folding nvim -t ~
+stow --no-folding scripts -t ~
 
 # Stow all package modules at once (prefer ./install.sh to apply --no-folding and ignores)
 stow --no-folding alacritty archinstall atuin bat btop environment eye-guard-cli fontconfig foot ghostty git glow konsole nvim rclone scripts spicetify systemd tmux warp zellij zsh -t ~
 
 # Restow (refresh links) for specific modules
-stow -R zsh nvim -t ~
+stow --no-folding -R zsh nvim -t ~
 
 # Unstow / remove symlinks for a module
 stow -D zsh -t ~
