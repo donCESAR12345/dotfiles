@@ -3,7 +3,8 @@
 theme "catppuccin-mocha"
 default_layout "compact"
 pane_frames false
-copy_command "wl-copy"
+copy_on_select true
+copy_clipboard "system"
 scrollback_editor "nvim"
 mouse_mode true
 
