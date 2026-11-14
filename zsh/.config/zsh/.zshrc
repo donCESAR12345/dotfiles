@@ -101,10 +101,19 @@ alias ln='ln -i'
 alias tpm-regen="sudo systemd-cryptenroll /dev/nvme0n1p6 --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=0,2,4,7,8,9"
 alias fix-spotify="sudo chmod a+wr /opt/spotify/; sudo chmod a+wr -R /opt/spotify/Apps/; spicetify backup apply"
 
-# Google Drive sync (rclone)
-alias gdrive-status='systemctl --user status rclone-gdrive-bisync.timer'
-alias gdrive-log='journalctl --user -u rclone-gdrive-bisync.service -f'
-alias gdrive-run='systemctl --user start rclone-gdrive-bisync.service'
+# Google Drive sync (rclone-bisync@<remote>; defaults to gdrive-personal)
+gdrive-status() {
+    local remote="${1:-gdrive-personal}"
+    systemctl --user status "rclone-bisync@${remote}.timer" "rclone-bisync@${remote}.service"
+}
+gdrive-log() {
+    local remote="${1:-gdrive-personal}"
+    journalctl --user -u "rclone-bisync@${remote}.service" -f
+}
+gdrive-run() {
+    local remote="${1:-gdrive-personal}"
+    systemctl --user start "rclone-bisync@${remote}.service"
+}
 
 # Open nvim with a unique socket (enables remote control)
 alias vi='nvim --listen "${XDG_RUNTIME_DIR:-/tmp}/nvim.$RANDOM.0"'

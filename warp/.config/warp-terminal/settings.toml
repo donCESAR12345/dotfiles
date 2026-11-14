@@ -17,8 +17,8 @@ font_name = "Hasklug Nerd Font Mono"
 notebook_font_size = 14.0
 
 [appearance.themes]
-system_theme = true
-theme = "phenomenon"
+system_theme = "Catppuccin Mocha"
+theme = "Catppuccin Mocha"
 
 [appearance.window]
 zoom_level = 125
@@ -48,6 +48,45 @@ should_render_use_agent_toolbar_for_user_commands = false
 
 [agents.profiles]
 agent_mode_execute_readonly_commands = true
+
+[agents.execution_profiles]
+
+[agents.execution_profiles.default]
+apply_code_diffs = "agent_decides"
+ask_user_question = "ask_except_in_auto_approve"
+autosync_plans_to_warp_drive = true
+command_allowlist = []
+command_denylist = [
+  'bash(\s.*)?',
+  'fish(\s.*)?',
+  'pwsh(\s.*)?',
+  'sh(\s.*)?',
+  'zsh(\s.*)?',
+  'curl(\s.*)?',
+  'eval(\s.*)?',
+  'exec(\s.*)?',
+  'source(\s.*)?',
+  'wget(\s.*)?',
+  'dig(\s.*)?',
+  'nslookup(\s.*)?',
+  'host(\s.*)?',
+  'ssh(\s.*)?',
+  'scp(\s.*)?',
+  'rsync(\s.*)?',
+  'telnet(\s.*)?',
+  'rm(\s.*)?',
+]
+computer_use = "always_ask"
+directory_allowlist = []
+execute_commands = "always_ask"
+mcp_allowlist = []
+mcp_denylist = []
+mcp_permissions = "agent_decides"
+name = "Default"
+read_files = "agent_decides"
+run_agents = "always_ask"
+web_search_enabled = true
+write_to_pty = "always_ask"
 
 [system]
 force_x11 = false
