@@ -1,0 +1,4 @@
+\.example$
+^sync-.*\.env$
+\.bak(\..*)?$
+\.stow-local-ignore$

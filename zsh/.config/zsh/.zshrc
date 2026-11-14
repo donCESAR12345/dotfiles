@@ -4,12 +4,14 @@
 ZINIT_HOME="${XDG_DATA_HOME}/zinit/zinit.git"
 
 # Install zinit if missing
-if [ ! -d "$ZINIT_HOME" ]; then
-    mkdir -p "$(dirname $ZINIT_HOME)"
-    git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+if [[ ! -d "$ZINIT_HOME" ]]; then
+    mkdir -p "${ZINIT_HOME:h}"
+    git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME" || true
 fi
 
-source "$ZINIT_HOME/zinit.zsh"
+if [[ -f "$ZINIT_HOME/zinit.zsh" ]]; then
+    source "$ZINIT_HOME/zinit.zsh"
+fi
 
 # ==============================================================================
 # 2. PLUGINS
@@ -84,7 +86,7 @@ alias cwd="pwd | wl-copy"
 
 # Config shortcuts
 alias ezsh="nvim $ZDOTDIR/.zshrc"
-alias esenv="nvim $HOME/.zshenv"
+alias esenv="nvim $ZDOTDIR/.zshenv"
 
 # Firewall
 alias fw-status="sudo firewall-cmd --get-active-zones"
@@ -132,19 +134,20 @@ bibshiny() {
 # AI command assistant — fetches a shell command and loads it into the buffer
 # Usage: ask <natural language description>
 ask() {
-    if [ $# -eq 0 ]; then
+    (( $+commands[aichat] )) || { echo "aichat is not installed." >&2; return 1; }
+    if [[ $# -eq 0 ]]; then
         aichat
     else
         local cmd
         cmd=$(aichat --role command "$*" | tr -d '\n' | sed 's/^ *//;s/ *$//')
-        print -z "$cmd"
+        [[ -n "$cmd" ]] && print -z "$cmd"
     fi
 }
 
 # ==============================================================================
 # 7. INITIALIZATIONS
 # ==============================================================================
-eval "$(atuin init zsh --disable-up-arrow)"
-eval "$(fnm env --use-on-cd --shell zsh)"
-eval "$(zoxide init --cmd cd zsh)"
-eval "$(starship init zsh)"
+(( $+commands[atuin] ))    && eval "$(atuin init zsh --disable-up-arrow)"
+(( $+commands[fnm] ))      && eval "$(fnm env --use-on-cd --shell zsh)"
+(( $+commands[zoxide] ))   && eval "$(zoxide init --cmd cd zsh)"
+(( $+commands[starship] )) && eval "$(starship init zsh)"

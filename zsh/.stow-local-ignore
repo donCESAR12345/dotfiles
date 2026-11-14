@@ -1,0 +1,6 @@
+^\.env$
+\.example$
+^\.zcompdump
+^\.zsh_history$
+\.bak(\..*)?$
+\.stow-local-ignore$

@@ -55,7 +55,7 @@ archinstall/.config/archinstall/user_configuration.json
 
 * **Core Toolset**
 
-  * **Shell & Multiplexing:** `zsh`, `tmux`, `starship`
+  * **Shell & Prompt:** `zsh`, `starship` (with `zellij` / `tmux` installed post-setup)
   * **Modern CLI (Rust-based):** `eza`, `bat`, `ripgrep`, `fd`, `zoxide`, `dust`
   * **Development & Build Tools:** `uv`, `stow`, `neovim`, `base-devel`
 
@@ -238,7 +238,7 @@ Neovim is configured as a **modular, high-performance IDE**, optimized for Pytho
 
 ### 4.3 UI & Navigation
 
-* **Theme:** `tokyonight.nvim`
+* **Theme:** `catppuccin/nvim` (`catppuccin-mocha` / `catppuccin-latte`)
 
   * Automatic light/dark mode switching based on system state
 
@@ -281,7 +281,7 @@ The repository includes an automated management script `./install.sh` built arou
 ### 5.2 What `install.sh` Does Automatically
 
 1. **Dynamic Module Discovery:** Automatically detects all top-level package modules (excluding `docs`, `tests`, and `.git`).
-2. **Target Directory Setup:** Pre-creates essential XDG directories inside `$HOME` (`.config/systemd/user`, `.config/zsh`, `.local/bin`, `.local/share/konsole`, `.local/state/zsh`, `.cache/zsh`).
+2. **Target Directory Setup:** Pre-creates essential XDG directories inside `$HOME` (`.config/systemd/user`, `.config/zsh`, `.local/bin`, `.local/share/applications`, `.local/share/konsole`, `.local/state/zsh`, `.cache/zsh`).
 3. **Modular Stow (`--no-folding`):** Executes GNU Stow (`stow --no-folding ... -R -v -t ~ <module>`) to link individual files instead of folding entire directories, while ignoring `README.md`, `*.example`, `*.bak*`, `.env`, `.zcompdump*`, and `.zsh_history`.
 4. **Script Permissions:** Ensures custom user binaries in `scripts/.local/bin/` are executable (`chmod +x`).
 5. **Plugin Sync:** Headlessly synchronizes Neovim plugins via `lazy.nvim` (`nvim --headless "+Lazy! sync" +qa`) when the `nvim` module is selected.
@@ -332,8 +332,8 @@ stow zsh -t ~
 stow nvim -t ~
 stow scripts -t ~
 
-# Stow all package modules at once
-stow archinstall foot nvim rclone scripts systemd tmux zellij zsh -t ~
+# Stow all package modules at once (prefer ./install.sh to apply --no-folding and ignores)
+stow --no-folding alacritty archinstall atuin bat btop environment eye-guard-cli fontconfig foot ghostty git glow konsole nvim rclone scripts spicetify systemd tmux warp zellij zsh -t ~
 
 # Restow (refresh links) for specific modules
 stow -R zsh nvim -t ~

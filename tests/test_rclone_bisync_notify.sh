@@ -26,10 +26,13 @@ run_test() {
     local test_log="$TEMP_DIR/test.log"
     printf "%s\n" "$log_content" > "$test_log"
     
-    local output
-    output=$(PATH="$mock_bin:$PATH" "$SCRIPT_UNDER_TEST" "testprofile" "$test_log" 2>&1) || true
-    
+    local output rc=0
+    output=$(PATH="$mock_bin:$PATH" "$SCRIPT_UNDER_TEST" "testprofile" "$test_log" 2>&1) || rc=$?
+
     local pass=true
+    if [[ "$rc" -ne 0 ]]; then
+        pass=false
+    fi
     if ! printf '%s\n' "$output" | grep -Fq "<b>Causa:</b> $expected_cause"; then
         pass=false
     fi
@@ -96,6 +99,48 @@ run_test "11. Fallback genérico" \
   "2026/09/16 19:00:00 ERROR : unexpected internal failure occurred in engine" \
   "Error en sincronización de Rclone" \
   "unexpected internal failure occurred in engine"
+
+run_test "12. Escapado HTML/Pango" \
+  "2026/09/16 19:05:00 ERROR : <bad> & \"tag\"" \
+  "Error en sincronización de Rclone" \
+  "&lt;bad&gt; &amp;"
+
+# 13. Log faltante
+missing_rc=0
+missing_out=$(PATH="$mock_bin:$PATH" "$SCRIPT_UNDER_TEST" "testprofile" "$TEMP_DIR/does-not-exist.log" 2>&1) || missing_rc=$?
+if [[ "$missing_rc" -eq 0 ]] && printf '%s\n' "$missing_out" | grep -Fq "Archivo de registro no encontrado"; then
+    echo "[PASS] 13. Log faltante"
+    passed=$((passed + 1))
+else
+    echo "[FAIL] 13. Log faltante"
+    failed=$((failed + 1))
+fi
+
+# 14. Log vacío
+: > "$TEMP_DIR/empty.log"
+empty_rc=0
+empty_out=$(PATH="$mock_bin:$PATH" "$SCRIPT_UNDER_TEST" "testprofile" "$TEMP_DIR/empty.log" 2>&1) || empty_rc=$?
+if [[ "$empty_rc" -eq 0 ]] && printf '%s\n' "$empty_out" | grep -Fq "Archivo de registro vacío"; then
+    echo "[PASS] 14. Log vacío"
+    passed=$((passed + 1))
+else
+    echo "[FAIL] 14. Log vacío"
+    failed=$((failed + 1))
+fi
+
+# 15. Lectura de export LOG_FILE desde .env
+mkdir -p "$TEMP_DIR/cfg/rclone"
+printf '2026/09/16 19:10:00 ERROR : directory not found\n' > "$TEMP_DIR/env_custom.log"
+printf 'export LOG_FILE="%s"\n' "$TEMP_DIR/env_custom.log" > "$TEMP_DIR/cfg/rclone/sync-envprofile.env"
+env_rc=0
+env_out=$(XDG_CONFIG_HOME="$TEMP_DIR/cfg" PATH="$mock_bin:$PATH" "$SCRIPT_UNDER_TEST" "envprofile" 2>&1) || env_rc=$?
+if [[ "$env_rc" -eq 0 ]] && printf '%s\n' "$env_out" | grep -Fq "Directorio local o remoto inaccesible"; then
+    echo "[PASS] 15. Lectura de export LOG_FILE desde .env"
+    passed=$((passed + 1))
+else
+    echo "[FAIL] 15. Lectura de export LOG_FILE desde .env"
+    failed=$((failed + 1))
+fi
 
 echo ""
 echo "Resumen: $passed pasadas, $failed falladas."

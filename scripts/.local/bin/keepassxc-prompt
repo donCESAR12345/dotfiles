@@ -25,6 +25,7 @@ fi
 # 1. Determinar si el destino utiliza llaves SSH cifradas y si ya están en el agente
 needs_keepassxc=false
 missing_key_names=()
+missing_key_fps=()
 
 ssh_config_dump=$(ssh -G "$target_alias" 2>/dev/null || true)
 pubkey_enabled=$(echo "$ssh_config_dump" | awk '/^pubkeyauthentication / {print $2}')
@@ -39,6 +40,7 @@ if [[ "$pubkey_enabled" != "no" ]] && [[ "$preferred_auth" == *"publickey"* ]]; 
             # verificar si ya está inyectada en el agente SSH
             if ! ssh-keygen -y -f "$key_path" -P "" &>/dev/null; then
                 is_loaded=false
+                fp=""
                 # Verificar fingerprint en ssh-agent si existe llave pública
                 if [[ -f "${key_path}.pub" ]]; then
                     fp=$(ssh-keygen -l -f "${key_path}.pub" 2>/dev/null | awk '{print $2}')
@@ -49,15 +51,22 @@ if [[ "$pubkey_enabled" != "no" ]] && [[ "$preferred_auth" == *"publickey"* ]]; 
                 if [[ "$is_loaded" == false ]]; then
                     needs_keepassxc=true
                     missing_key_names+=("$(basename "$key_path")")
+                    [[ -n "$fp" ]] && missing_key_fps+=("$fp")
                 fi
             fi
         fi
     done < <(echo "$ssh_config_dump" | grep -E '^identityfile ' || true)
 fi
 
+nc_bin=$(command -v nc || true)
+if [[ -z "$nc_bin" ]]; then
+    echo "Error: 'nc' command not found in PATH." >&2
+    exit 1
+fi
+
 # Si no requiere llave cifrada por KeePassXC o ya están cargadas, conectar directamente
 if [[ "$needs_keepassxc" == false ]]; then
-    exec /usr/bin/nc "$target_host" "$target_port"
+    exec "$nc_bin" "$target_host" "$target_port"
 fi
 
 # 2. Traer KeePassXC al frente y al escritorio actual de forma agnóstica al DE / WM
@@ -102,15 +111,19 @@ focus_keepassxc() {
                 }
             '
             local script_file
-            script_file=$(mktemp /tmp/kwin-focus-keepass-XXXXXX.js 2>/dev/null || echo "/tmp/kwin-focus-keepass-$$.js")
-            echo "$kwin_script" > "$script_file"
-            local script_id
-            script_id=$("$qdbus_bin" org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript "$script_file" 2>/dev/null || true)
-            if [[ -n "$script_id" && "$script_id" =~ ^[0-9]+$ ]]; then
-                "$qdbus_bin" org.kde.KWin "/Scripting/Script$script_id" org.kde.kwin.Script.run &>/dev/null || true
-                "$qdbus_bin" org.kde.KWin "/Scripting/Script$script_id" org.kde.kwin.Script.stop &>/dev/null || true
+            script_file=$(mktemp "${XDG_RUNTIME_DIR:-/tmp}/kwin-focus-keepass-XXXXXX.js" 2>/dev/null || true)
+            if [[ -n "$script_file" ]]; then
+                trap 'rm -f "$script_file"' RETURN
+                printf '%s\n' "$kwin_script" > "$script_file"
+                local script_id
+                script_id=$("$qdbus_bin" org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript "$script_file" 2>/dev/null || true)
+                if [[ -n "$script_id" && "$script_id" =~ ^[0-9]+$ ]]; then
+                    "$qdbus_bin" org.kde.KWin "/Scripting/Script$script_id" org.kde.kwin.Script.run &>/dev/null || true
+                    "$qdbus_bin" org.kde.KWin "/Scripting/Script$script_id" org.kde.kwin.Script.stop &>/dev/null || true
+                fi
+                rm -f "$script_file"
+                trap - RETURN
             fi
-            rm -f "$script_file"
             return 0
         fi
     fi
@@ -184,15 +197,16 @@ elapsed=0
 while true; do
     # Comprobar si las llaves pendientes ya están presentes en el agente
     all_resolved=true
-    if [[ ${#missing_key_names[@]} -gt 0 ]]; then
-        for k_name in "${missing_key_names[@]}"; do
-            if ! ssh-add -l &>/dev/null; then
+    agent_keys=$(ssh-add -l 2>/dev/null || true)
+    if [[ ${#missing_key_fps[@]} -gt 0 ]]; then
+        for fp in "${missing_key_fps[@]}"; do
+            if [[ -z "$agent_keys" ]] || ! printf '%s\n' "$agent_keys" | grep -qF "$fp"; then
                 all_resolved=false
                 break
             fi
         done
     else
-        if ! ssh-add -l &>/dev/null; then
+        if [[ -z "$agent_keys" ]]; then
             all_resolved=false
         fi
     fi
@@ -206,7 +220,7 @@ while true; do
         break
     fi
     sleep 1
-    ((elapsed++))
+    elapsed=$((elapsed + 1))
 done
 
 if ssh-add -l &>/dev/null; then
@@ -214,4 +228,4 @@ if ssh-add -l &>/dev/null; then
 fi
 
 # Ejecutar el comando de transporte
-exec /usr/bin/nc "$target_host" "$target_port"
+exec "$nc_bin" "$target_host" "$target_port"

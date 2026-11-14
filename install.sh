@@ -6,12 +6,17 @@ DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ACTION="stow"
 TARGET_HOME="$HOME"
 SELECTED_MODULES=()
-DRY_RUN=""
+STOW_DRY_RUN=()
+FAILED_MODULES=()
 STOW_IGNORE_ARGS=(
     --ignore='(^|/)README\.md$'
     --ignore='\.example$'
     --ignore='\.bak(\..*)?$'
     --ignore='(^|/)\.env$'
+    --ignore='(^|/)sync-.*\.env$'
+    --ignore='(^|/)config\.local$'
+    --ignore='(^|/)user_preferences\.json$'
+    --ignore='(^|/)\.stow-local-ignore$'
     --ignore='(^|/)\.zcompdump'
     --ignore='(^|/)\.zsh_history$'
 )
@@ -23,10 +28,10 @@ YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-info()  { printf "${BLUE}[INFO]${NC} %s\n" "$*"; }
-ok()    { printf "${GREEN}[OK]${NC} %s\n" "$*"; }
-warn()  { printf "${YELLOW}[WARN]${NC} %s\n" "$*"; }
-error() { printf "${RED}[ERROR]${NC} %s\n" "$*"; }
+info()  { printf '%b[INFO]%b %s\n' "$BLUE" "$NC" "$*"; }
+ok()    { printf '%b[OK]%b %s\n' "$GREEN" "$NC" "$*"; }
+warn()  { printf '%b[WARN]%b %s\n' "$YELLOW" "$NC" "$*"; }
+error() { printf '%b[ERROR]%b %s\n' "$RED" "$NC" "$*"; }
 
 discover_modules() {
     local modules=()
@@ -39,7 +44,9 @@ discover_modules() {
             *) modules+=("$name") ;;
         esac
     done
-    printf '%s\n' "${modules[@]}"
+    if [[ ${#modules[@]} -gt 0 ]]; then
+        printf '%s\n' "${modules[@]}"
+    fi
 }
 
 mapfile -t ALL_MODULES < <(discover_modules)
@@ -74,7 +81,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -n|--dry-run)
-            DRY_RUN="-n"
+            STOW_DRY_RUN=(-n)
             shift
             ;;
         -*)
@@ -115,27 +122,30 @@ ok "Target directories ready."
 for module in "${SELECTED_MODULES[@]}"; do
     if [[ ! -d "$DOTFILES_DIR/$module" ]]; then
         warn "Module directory '$module' does not exist in $DOTFILES_DIR. Skipping."
+        FAILED_MODULES+=("$module")
         continue
     fi
 
     if [[ "$ACTION" == "stow" ]]; then
         info "Stowing module: $module"
-        if stow $DRY_RUN --no-folding "${STOW_IGNORE_ARGS[@]}" -R -v -t "$TARGET_HOME" "$module"; then
+        if stow "${STOW_DRY_RUN[@]}" --no-folding "${STOW_IGNORE_ARGS[@]}" -R -v -t "$TARGET_HOME" "$module"; then
             ok "Stowed $module"
         else
             warn "Failed to stow module '$module'. Check for conflicting existing files in $TARGET_HOME."
+            FAILED_MODULES+=("$module")
         fi
     elif [[ "$ACTION" == "unstow" ]]; then
         info "Unstowing module: $module"
-        if stow $DRY_RUN -D -v -t "$TARGET_HOME" "$module"; then
+        if stow "${STOW_DRY_RUN[@]}" -D -v -t "$TARGET_HOME" "$module"; then
             ok "Unstowed $module"
         else
             warn "Failed to unstow module '$module'."
+            FAILED_MODULES+=("$module")
         fi
     fi
 done
 
-if [[ "$ACTION" == "stow" && -z "$DRY_RUN" ]]; then
+if [[ "$ACTION" == "stow" && ${#STOW_DRY_RUN[@]} -eq 0 ]]; then
     info "Executing post-install hooks..."
 
     if [[ -d "$DOTFILES_DIR/scripts/.local/bin" ]]; then
@@ -155,6 +165,11 @@ if [[ "$ACTION" == "stow" && -z "$DRY_RUN" ]]; then
             break
         fi
     done
+fi
+
+if [[ ${#FAILED_MODULES[@]} -gt 0 ]]; then
+    error "Completed with failures in modules: ${FAILED_MODULES[*]}"
+    exit 1
 fi
 
 ok "All operations completed successfully."

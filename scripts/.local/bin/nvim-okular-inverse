@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # nvim-okular-inverse: Bridge between Okular and Neovim for SyncTeX inverse search
-set -e
+set -euo pipefail
 
-FILE="$1"
-LINE="$2"
-SOCKET_FILE="/tmp/nvim-latex-socket"
+FILE="${1:-}"
+LINE="${2:-1}"
+SOCKET_FILE="${XDG_RUNTIME_DIR:-/tmp}/nvim-latex-socket"
+FALLBACK_SOCKET_FILE="/tmp/nvim-latex-socket"
 
 if [[ -z "$FILE" ]]; then
     echo "Usage: $(basename "$0") <file> [line]" >&2
@@ -12,16 +13,17 @@ if [[ -z "$FILE" ]]; then
 fi
 
 [[ "$LINE" =~ ^[0-9]+$ ]] || LINE=1
-ESCAPED_FILE="${FILE// /\\ }"
+ESCAPED_FILE=$(printf '%s' "$FILE" | sed 's/[][ %#\\"]/\\&/g')
 
-if [[ -f "$SOCKET_FILE" ]]; then
-    SERVER=$(cat "$SOCKET_FILE" 2>/dev/null)
+for candidate in "$SOCKET_FILE" "$FALLBACK_SOCKET_FILE"; do
+    [[ -f "$candidate" ]] || continue
+    SERVER=$(cat "$candidate" 2>/dev/null || true)
     if [[ -n "$SERVER" && -S "$SERVER" ]]; then
-        if nvim --server "$SERVER" --remote-send "<C-\><C-N>:edit +${LINE} ${ESCAPED_FILE}<CR>" 2>/dev/null; then
+        if nvim --server "$SERVER" --remote-send "<C-\\><C-N>:edit +${LINE} ${ESCAPED_FILE}<CR>" 2>/dev/null; then
             exit 0
         fi
     fi
-fi
+done
 
 # Fallback if no active Neovim server socket is found
 if command -v kate &>/dev/null; then

@@ -1,7 +1,10 @@
 # Secrets & local overrides
 .env
+sync-*.env
+config.local
 header.txt
 quotes.txt
+user_preferences.json
 
 # Shell runtime artifacts
 .zcompdump*
