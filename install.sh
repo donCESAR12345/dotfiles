@@ -106,6 +106,7 @@ mkdir -p \
     "$TARGET_HOME/.config/systemd/user" \
     "$TARGET_HOME/.config/zsh" \
     "$TARGET_HOME/.local/bin" \
+    "$TARGET_HOME/.local/share/applications" \
     "$TARGET_HOME/.local/share/konsole" \
     "$TARGET_HOME/.local/state/zsh" \
     "$TARGET_HOME/.cache/zsh"

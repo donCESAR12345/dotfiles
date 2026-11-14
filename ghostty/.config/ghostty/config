@@ -48,4 +48,4 @@ keybind = shift+enter=text:\n
 gtk-single-instance = true
 
 # Dank color generation
-theme = dankcolors
+theme = light:"Gruvbox Light",dark:"Gruvbox Dark"

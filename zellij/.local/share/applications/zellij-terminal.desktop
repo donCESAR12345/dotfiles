@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Zellij Terminal
+Comment=Native GPU-accelerated Zellij terminal window
+Exec=zellij terminal
+Icon=utilities-terminal
+Terminal=false
+Categories=System;TerminalEmulator;
+StartupNotify=true
+StartupWMClass=zellij
+Keywords=shell;prompt;command;commandline;cmd;zellij;

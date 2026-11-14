@@ -275,3 +275,25 @@ load_plugins {}
 web_client {
     font "JetBrainsMono Nerd Font"
 }
+
+// Native GPU-accelerated terminal window (`zellij terminal`, v0.46+)
+terminal {
+    font "JetBrainsMono Nerd Font"
+    font_size 11
+    system_fonts true
+    ligatures true
+    padding 10
+    padding_balance true
+    cursor_style "bar"
+    hide_pointer_while_typing true
+    smooth_scrolling true
+    scroll_momentum true
+    open_links true
+    open_links_with_shift true
+    shift_drag_selects true
+    reuse_session_windows true
+    startup_mode "remember"
+    terminal_requests "existing_session"
+    initial_columns 120
+    initial_rows 36
+}
