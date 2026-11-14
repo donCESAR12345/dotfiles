@@ -31,7 +31,9 @@ zinit snippet OMZP::command-not-found
 # ==============================================================================
 # 3. COMPLETION
 # ==============================================================================
-autoload -Uz compinit; compinit
+mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
+autoload -Uz compinit
+compinit -d "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump-${ZSH_VERSION}"
 zinit cdreplay -q  # Replay cached completions from turbo-loaded plugins
 
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'

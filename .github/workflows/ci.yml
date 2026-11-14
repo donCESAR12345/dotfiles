@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y stow shellcheck
+
+      - name: Run shellcheck
+        run: shellcheck install.sh scripts/.local/bin/* tests/*.sh
+
+      - name: Run unit tests
+        run: bash tests/test_rclone_bisync_notify.sh
+
+      - name: Dry-run stow installation
+        run: ./install.sh --dry-run

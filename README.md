@@ -153,22 +153,26 @@ Zsh is fully modularized and compliant with the **XDG Base Directory Specificati
 
 ### 3.1 File Structure
 
+* **`zsh/.zshenv`**
+
+  * Bootstrap entry point in `$HOME/.zshenv`
+  * Sets `XDG_CONFIG_HOME` and `ZDOTDIR`, then sources `$ZDOTDIR/.zshenv`
+
 * **`zsh/.config/zsh/.zshenv`**
 
   * Global environment variables
   * `PATH` definitions
   * XDG directory locations
-  * Sourced for environment setup
 
 * **`zsh/.config/zsh/.zshrc`**
 
   * Interactive configuration
-  * Aliases, plugins, completion, prompt
+  * Aliases, plugins, completion (`zcompdump` stored in `$XDG_CACHE_HOME/zsh/`), prompt
 
-* **`zsh/.config/zsh/.env`**
+* **`zsh/.config/zsh/.env.example`**
 
-  * Sensitive environment variables
-  * Loaded at the very end of `.zshrc`
+  * Template for sensitive environment variables
+  * Copy to `~/.config/zsh/.env` (untracked, kept outside the repo)
 
 ---
 
@@ -276,10 +280,11 @@ The repository includes an automated management script `./install.sh` built arou
 
 ### 5.2 What `install.sh` Does Automatically
 
-1. **Target Directory Setup:** Pre-creates essential target directories inside `$HOME` (`.config`, `.local/bin`, `.local/state/zsh`).
-2. **Modular Stow:** Executes GNU Stow (`stow -R -v -t ~ <module>`) to link package files into your target home directory.
-3. **Script Permissions:** Ensures custom user binaries in `scripts/.local/bin/` are executable (`chmod +x`).
-4. **Plugin Sync:** Headlessly synchronizes Neovim plugins via `lazy.nvim` (`nvim --headless "+Lazy! sync" +qa`) when the `nvim` module is selected.
+1. **Dynamic Module Discovery:** Automatically detects all top-level package modules (excluding `docs`, `tests`, and `.git`).
+2. **Target Directory Setup:** Pre-creates essential XDG directories inside `$HOME` (`.config/systemd/user`, `.config/zsh`, `.local/bin`, `.local/share/konsole`, `.local/state/zsh`, `.cache/zsh`).
+3. **Modular Stow (`--no-folding`):** Executes GNU Stow (`stow --no-folding ... -R -v -t ~ <module>`) to link individual files instead of folding entire directories, while ignoring `README.md`, `*.example`, `*.bak*`, `.env`, `.zcompdump*`, and `.zsh_history`.
+4. **Script Permissions:** Ensures custom user binaries in `scripts/.local/bin/` are executable (`chmod +x`).
+5. **Plugin Sync:** Headlessly synchronizes Neovim plugins via `lazy.nvim` (`nvim --headless "+Lazy! sync" +qa`) when the `nvim` module is selected.
 
 ---
 
@@ -293,15 +298,24 @@ Each top-level directory represents an independent, modular package:
 
 ```
 dotfiles/
+├── alacritty/      # Alacritty terminal config (~/.config/alacritty/)
 ├── archinstall/    # Archinstall configuration (~/.config/archinstall/user_configuration.json)
+├── bat/            # Bat syntax-highlighting config & themes (~/.config/bat/)
+├── btop/           # Btop system monitor config (~/.config/btop/)
+├── environment/    # Wayland & session environment overrides (~/.config/environment.d/, chrome-flags.conf)
+├── fontconfig/     # Fontconfig rules (~/.config/fontconfig/)
 ├── foot/           # Foot terminal emulator config (~/.config/foot/)
+├── ghostty/        # Ghostty terminal emulator config (~/.config/ghostty/)
+├── git/            # Git XDG configuration (~/.config/git/config, includes config.local)
+├── konsole/        # Konsole profile & colorschemes (~/.config/konsolerc, ~/.local/share/konsole/)
 ├── nvim/           # Neovim IDE configuration (~/.config/nvim/)
 ├── rclone/         # Rclone sync configuration (~/.config/rclone/)
 ├── scripts/        # User binaries & automation (~/.local/bin/)
 ├── systemd/        # User systemd services & timers (~/.config/systemd/user/)
 ├── tmux/           # Tmux terminal multiplexer config (~/.config/tmux/)
+├── warp/           # Warp terminal preferences (~/.config/warp-terminal/)
 ├── zellij/         # Zellij terminal workspace config (~/.config/zellij/)
-└── zsh/            # Zsh shell configuration (~/.config/zsh/)
+└── zsh/            # Zsh shell configuration (~/.zshenv, ~/.config/zsh/)
 ```
 
 ### 6.2 Manual GNU Stow Commands
@@ -333,8 +347,8 @@ To replicate this system on new hardware:
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/donCESAR12345/dotfiles.git ~/dotfiles
-   cd ~/dotfiles
+   git clone https://github.com/donCESAR12345/dotfiles.git ~/Development/dotfiles
+   cd ~/Development/dotfiles
    ```
 
 2. **Install the system (optional Arch Linux deployment)**

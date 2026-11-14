@@ -1,5 +1,19 @@
+# Secrets & local overrides
 .env
-.zcompdump*
-docs/superpowers/
 header.txt
 quotes.txt
+
+# Shell runtime artifacts
+.zcompdump*
+.zsh_history
+*.zwc
+
+# Backups & editor swap files
+*.bak
+*.bak.*
+*.orig
+*.swp
+*~
+
+# Internal planning docs
+docs/superpowers/

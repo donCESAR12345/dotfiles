@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 # Base directory setup
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ACTION="stow"
 TARGET_HOME="$HOME"
-ALL_MODULES=(alacritty archinstall foot ghostty konsole nvim rclone scripts systemd tmux warp zellij zsh)
 SELECTED_MODULES=()
 DRY_RUN=""
+STOW_IGNORE_ARGS=(
+    --ignore='(^|/)README\.md$'
+    --ignore='\.example$'
+    --ignore='\.bak(\..*)?$'
+    --ignore='(^|/)\.env$'
+    --ignore='(^|/)\.zcompdump'
+    --ignore='(^|/)\.zsh_history$'
+)
 
 # Color definitions for output
 RED='\033[0;31m'
@@ -21,6 +28,22 @@ ok()    { printf "${GREEN}[OK]${NC} %s\n" "$*"; }
 warn()  { printf "${YELLOW}[WARN]${NC} %s\n" "$*"; }
 error() { printf "${RED}[ERROR]${NC} %s\n" "$*"; }
 
+discover_modules() {
+    local modules=()
+    local dir name
+    for dir in "$DOTFILES_DIR"/*/; do
+        [[ -d "$dir" ]] || continue
+        name="$(basename "$dir")"
+        case "$name" in
+            docs|tests|.git) continue ;;
+            *) modules+=("$name") ;;
+        esac
+    done
+    printf '%s\n' "${modules[@]}"
+}
+
+mapfile -t ALL_MODULES < <(discover_modules)
+
 show_help() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS] [MODULE...]
@@ -29,8 +52,8 @@ Automated dotfiles installation and management script using GNU Stow.
 
 Options:
   -h, --help       Display usage help and exit
-  -D, --uninstall  Set ACTION="unstow" to remove symlinks
-  -n, --dry-run    Set DRY_RUN="-n" to simulate actions without modifying files
+  -D, --uninstall  Remove symlinks for all or selected modules
+  -n, --dry-run    Simulate actions without modifying files
 
 Available Modules:
   ${ALL_MODULES[*]}
@@ -66,26 +89,28 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# If no positional args added to SELECTED_MODULES, default to ALL_MODULES
 if [[ ${#SELECTED_MODULES[@]} -eq 0 ]]; then
     SELECTED_MODULES=("${ALL_MODULES[@]}")
 fi
 
-# Check if stow command exists in PATH
 if ! command -v stow &>/dev/null; then
     error "'stow' command was not found in PATH. Please install GNU Stow."
     exit 1
 fi
 
-# Ensure working directory is DOTFILES_DIR
 cd "$DOTFILES_DIR"
 
-# Pre-create target directories before stowing
+# Pre-create XDG target directories so stow links files instead of folding entire trees
 info "Preparing target directories in $TARGET_HOME..."
-mkdir -p "$TARGET_HOME/.config" "$TARGET_HOME/.local/bin" "$TARGET_HOME/.local/state/zsh"
+mkdir -p \
+    "$TARGET_HOME/.config/systemd/user" \
+    "$TARGET_HOME/.config/zsh" \
+    "$TARGET_HOME/.local/bin" \
+    "$TARGET_HOME/.local/share/konsole" \
+    "$TARGET_HOME/.local/state/zsh" \
+    "$TARGET_HOME/.cache/zsh"
 ok "Target directories ready."
 
-# Stow Loop
 for module in "${SELECTED_MODULES[@]}"; do
     if [[ ! -d "$DOTFILES_DIR/$module" ]]; then
         warn "Module directory '$module' does not exist in $DOTFILES_DIR. Skipping."
@@ -94,7 +119,7 @@ for module in "${SELECTED_MODULES[@]}"; do
 
     if [[ "$ACTION" == "stow" ]]; then
         info "Stowing module: $module"
-        if stow $DRY_RUN -R -v -t "$TARGET_HOME" "$module"; then
+        if stow $DRY_RUN --no-folding "${STOW_IGNORE_ARGS[@]}" -R -v -t "$TARGET_HOME" "$module"; then
             ok "Stowed $module"
         else
             warn "Failed to stow module '$module'. Check for conflicting existing files in $TARGET_HOME."
@@ -109,32 +134,26 @@ for module in "${SELECTED_MODULES[@]}"; do
     fi
 done
 
-# Post-install Hooks (only when ACTION == "stow" and DRY_RUN is empty)
 if [[ "$ACTION" == "stow" && -z "$DRY_RUN" ]]; then
     info "Executing post-install hooks..."
 
-    # Make user scripts executable
-    chmod +x "$DOTFILES_DIR/scripts/.local/bin/"* 2>/dev/null || true
-    ok "Updated permissions for scripts in $DOTFILES_DIR/scripts/.local/bin/"
+    if [[ -d "$DOTFILES_DIR/scripts/.local/bin" ]]; then
+        chmod +x "$DOTFILES_DIR/scripts/.local/bin/"* 2>/dev/null || true
+        ok "Updated permissions for scripts in $DOTFILES_DIR/scripts/.local/bin/"
+    fi
 
-    # Check if nvim module is in SELECTED_MODULES and nvim command exists
-    nvim_selected=false
     for mod in "${SELECTED_MODULES[@]}"; do
         if [[ "$mod" == "nvim" ]]; then
-            nvim_selected=true
+            if command -v nvim &>/dev/null; then
+                info "Syncing Neovim plugins..."
+                nvim --headless "+Lazy! sync" +qa || true
+                ok "Neovim plugins synchronized."
+            else
+                warn "Neovim command not found in PATH; skipping plugin sync."
+            fi
             break
         fi
     done
-
-    if [[ "$nvim_selected" == true ]]; then
-        if command -v nvim &>/dev/null; then
-            info "Syncing Neovim plugins..."
-            nvim --headless "+Lazy! sync" +qa || true
-            ok "Neovim plugins synchronized."
-        else
-            warn "Neovim command not found in PATH; skipping plugin sync."
-        fi
-    fi
 fi
 
 ok "All operations completed successfully."
