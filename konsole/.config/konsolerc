@@ -1,5 +1,18 @@
+[Desktop Entry]
+DefaultProfile=DankDark.profile
+
 [General]
 ConfigVersion=1
+
+[KonsoleWindow]
+ShowMenuBarByDefault=false
+
+[MainWindow]
+MenuBar=Disabled
+
+[TabBar]
+TabBarPosition=Top
+TabBarVisibility=ShowTabBarWhenNeeded
 
 [UiSettings]
 ColorScheme=
