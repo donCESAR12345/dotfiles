@@ -1,6 +1,7 @@
-// Zellij configuration (managed by dotfiles; theme line updated by eye-guard)
+// Zellij configuration (managed by dotfiles; native dark/light switching for zellij terminal)
 
-theme "catppuccin-latte"
+theme_dark "catppuccin-mocha"
+theme_light "catppuccin-latte"
 default_layout "compact"
 pane_frames false
 copy_on_select true
