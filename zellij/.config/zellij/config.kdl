@@ -2,6 +2,7 @@
 
 theme_dark "catppuccin-mocha"
 theme_light "catppuccin-latte"
+explicit_theme_hue "dark"
 default_layout "compact"
 pane_frames false
 copy_on_select true
