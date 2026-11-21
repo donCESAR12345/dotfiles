@@ -1,0 +1,240 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Remote Wayland desktop helper for Hyprland 0.57+ + DankMaterialShell via WayVNC.
+# Listens strictly on 127.0.0.1 (use an SSH local port forward over Tailscale).
+
+PORT=5900
+FPS=60
+RES="1920x1080@60"
+KEYBOARD="latam"
+OUTPUT=""
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/hypr-remote"
+
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") <headless|attach> [OPTIONS]
+
+Modes:
+  headless   Start an isolated headless Hyprland + DMS + WayVNC session
+             (safe even while GNOME/another desktop is logged in on seat0).
+  attach     Attach WayVNC to an already-running Hyprland session.
+
+Options:
+  --res <WxH@Hz>      Virtual monitor mode for headless mode (default: $RES)
+  --port <port>       Localhost TCP port for WayVNC (default: $PORT)
+  --fps <fps>         WayVNC max FPS (default: $FPS)
+  --keyboard <layout> WayVNC keyboard layout (default: $KEYBOARD)
+  --output <name>     Specific output name to capture (auto-detected if omitted)
+  -h, --help          Show this help and exit
+
+Connect from client machine:
+  ssh -N -L ${PORT}:127.0.0.1:${PORT} workstation.tailscale
+  # Then open vnc://127.0.0.1:${PORT} in krdc (enable "Grab all keys")
+EOF
+}
+
+require_cmd() {
+    local cmd="$1"
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        printf '[ERROR] Required command not found in PATH: %s\n' "$cmd" >&2
+        exit 1
+    fi
+}
+
+# Safely query hyprctl instances JSON (Hyprland 0.57 prints malformed "]" when empty)
+get_instances_json() {
+    local raw
+    raw="$(hyprctl instances -j 2>/dev/null || true)"
+    if printf '%s' "$raw" | jq -e 'type == "array"' >/dev/null 2>&1; then
+        printf '%s' "$raw"
+    else
+        printf '[]'
+    fi
+}
+
+if [[ "$#" -lt 1 ]]; then
+    usage
+    exit 1
+fi
+
+MODE="$1"
+shift
+
+case "$MODE" in
+    -h|--help)
+        usage
+        exit 0
+        ;;
+    headless|attach) ;;
+    *)
+        printf '[ERROR] Unknown mode: %s\n' "$MODE" >&2
+        usage >&2
+        exit 1
+        ;;
+esac
+
+while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+        --res)
+            RES="${2:?--res requires a value}"
+            shift 2
+            ;;
+        --port)
+            PORT="${2:?--port requires a value}"
+            shift 2
+            ;;
+        --fps)
+            FPS="${2:?--fps requires a value}"
+            shift 2
+            ;;
+        --keyboard)
+            KEYBOARD="${2:?--keyboard requires a value}"
+            shift 2
+            ;;
+        --output)
+            OUTPUT="${2:?--output requires a value}"
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            printf '[ERROR] Unknown option: %s\n' "$1" >&2
+            usage >&2
+            exit 1
+            ;;
+    esac
+done
+
+require_cmd hyprctl
+require_cmd wayvnc
+require_cmd jq
+
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+mkdir -p "$STATE_DIR"
+
+if [[ "$MODE" == "attach" ]]; then
+    INST_JSON="$(get_instances_json)"
+    SIG="$(printf '%s' "$INST_JSON" | jq -r '.[0].instance // empty')"
+    WL_SOCK="$(printf '%s' "$INST_JSON" | jq -r '.[0].wl_socket // empty')"
+
+    if [[ -z "$SIG" || -z "$WL_SOCK" ]]; then
+        printf '[ERROR] No running Hyprland instance found. Use "%s headless" instead.\n' "$(basename "$0")" >&2
+        exit 1
+    fi
+
+    export HYPRLAND_INSTANCE_SIGNATURE="$SIG"
+    export WAYLAND_DISPLAY="$WL_SOCK"
+
+    if [[ -z "$OUTPUT" ]]; then
+        OUTPUT="$(hyprctl monitors -j | jq -r '.[0].name // empty')"
+    fi
+
+    WAYVNC_ARGS=(--render-cursor --max-fps="$FPS" --keyboard="$KEYBOARD")
+    if [[ -n "$OUTPUT" ]]; then
+        WAYVNC_ARGS+=(--output="$OUTPUT")
+    fi
+
+    printf '[INFO] Attaching WayVNC to Hyprland (%s, output=%s) on 127.0.0.1:%s\n' \
+        "$WAYLAND_DISPLAY" "${OUTPUT:-default}" "$PORT"
+    exec wayvnc "${WAYVNC_ARGS[@]}" 127.0.0.1 "$PORT"
+fi
+
+# === Headless mode ===
+require_cmd hyprland
+
+HYPR_PID=""
+DMS_PID=""
+WAYVNC_PID=""
+
+cleanup() {
+    local rc=$?
+    trap - EXIT INT TERM
+    if [[ -n "$WAYVNC_PID" ]] && kill -0 "$WAYVNC_PID" 2>/dev/null; then
+        kill "$WAYVNC_PID" 2>/dev/null || true
+    fi
+    if [[ -n "$DMS_PID" ]] && kill -0 "$DMS_PID" 2>/dev/null; then
+        kill "$DMS_PID" 2>/dev/null || true
+    fi
+    if [[ -n "$HYPR_PID" ]] && kill -0 "$HYPR_PID" 2>/dev/null; then
+        kill "$HYPR_PID" 2>/dev/null || true
+        wait "$HYPR_PID" 2>/dev/null || true
+    fi
+    exit "$rc"
+}
+trap cleanup EXIT INT TERM
+
+printf '[INFO] Starting headless Hyprland (%s)...\n' "$RES"
+env -u WAYLAND_DISPLAY -u DISPLAY \
+    AQ_BACKEND=headless \
+    WLR_BACKENDS=headless \
+    HYPR_REMOTE_HEADLESS=1 \
+    HYPR_REMOTE_RES="$RES" \
+    XDG_CURRENT_DESKTOP=Hyprland \
+    XDG_SESSION_TYPE=wayland \
+    hyprland >"${STATE_DIR}/hyprland.log" 2>&1 &
+HYPR_PID=$!
+
+# Wait for the new Hyprland instance matching HYPR_PID to expose its Wayland socket
+SIG=""
+WL_SOCK=""
+for _ in $(seq 1 50); do
+    if ! kill -0 "$HYPR_PID" 2>/dev/null; then
+        printf '[ERROR] Headless Hyprland exited early. See %s/hyprland.log\n' "$STATE_DIR" >&2
+        tail -n 30 "${STATE_DIR}/hyprland.log" >&2 || true
+        exit 1
+    fi
+    INST_JSON="$(get_instances_json)"
+    SIG="$(printf '%s' "$INST_JSON" | jq -r --argjson pid "$HYPR_PID" '.[] | select(.pid == $pid) | .instance // empty')"
+    WL_SOCK="$(printf '%s' "$INST_JSON" | jq -r --argjson pid "$HYPR_PID" '.[] | select(.pid == $pid) | .wl_socket // empty')"
+    if [[ -n "$SIG" && -n "$WL_SOCK" ]]; then
+        break
+    fi
+    sleep 0.2
+done
+
+if [[ -z "$SIG" || -z "$WL_SOCK" ]]; then
+    printf '[ERROR] Timed out waiting for headless Hyprland socket. See %s/hyprland.log\n' "$STATE_DIR" >&2
+    exit 1
+fi
+
+export HYPRLAND_INSTANCE_SIGNATURE="$SIG"
+export WAYLAND_DISPLAY="$WL_SOCK"
+export XDG_CURRENT_DESKTOP=Hyprland
+export XDG_SESSION_TYPE=wayland
+
+# Ensure a headless output exists and apply requested resolution
+OUT_NAME="$OUTPUT"
+if [[ -z "$OUT_NAME" ]]; then
+    OUT_NAME="$(hyprctl monitors -j | jq -r '.[0].name // empty')"
+fi
+if [[ -z "$OUT_NAME" ]]; then
+    hyprctl output create headless HEADLESS-1 >/dev/null
+    sleep 0.3
+    OUT_NAME="$(hyprctl monitors -j | jq -r '.[0].name // empty')"
+fi
+if [[ -n "$OUT_NAME" ]]; then
+    hyprctl keyword monitor "${OUT_NAME},${RES},0x0,1" >/dev/null 2>&1 || true
+fi
+
+# Start DankMaterialShell inside this isolated Wayland session if installed
+if command -v dms >/dev/null 2>&1; then
+    printf '[INFO] Starting DankMaterialShell in %s...\n' "$WAYLAND_DISPLAY"
+    QS_DISABLE_CRASH_HANDLER=1 dms run >"${STATE_DIR}/dms.log" 2>&1 &
+    DMS_PID=$!
+    sleep 1
+fi
+
+WAYVNC_ARGS=(--render-cursor --max-fps="$FPS" --keyboard="$KEYBOARD")
+if [[ -n "$OUT_NAME" ]]; then
+    WAYVNC_ARGS+=(--output="$OUT_NAME")
+fi
+
+printf '[OK] Headless Hyprland ready: WAYLAND_DISPLAY=%s output=%s res=%s\n' \
+    "$WAYLAND_DISPLAY" "${OUT_NAME:-default}" "$RES"
+printf '[OK] Starting WayVNC on 127.0.0.1:%s (Press Ctrl+C to stop)\n' "$PORT"
+wayvnc "${WAYVNC_ARGS[@]}" 127.0.0.1 "$PORT" &
+WAYVNC_PID=$!
+wait "$WAYVNC_PID"

@@ -1,0 +1,8 @@
+# Host-specific and DMS auto-generated Hyprland files
+(^|/)colors\.(lua|conf)$
+(^|/)outputs\.(lua|conf)$
+(^|/)layout\.(lua|conf)$
+(^|/)cursor\.(lua|conf)$
+(^|/)windowrules\.(lua|conf)$
+(^|/)local\.(lua|conf)$
+\.backup\.

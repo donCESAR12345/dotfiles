@@ -89,6 +89,7 @@ path=(
     "$CARGO_HOME/bin"
     "$GOPATH/bin"
     "$PNPM_HOME"
+    "$HOME/.pixi/bin"
     "$FNM_DIR"
     $path
 )

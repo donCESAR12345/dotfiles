@@ -113,6 +113,9 @@ cd "$DOTFILES_DIR"
 if [[ "$ACTION" == "stow" && ${#STOW_DRY_RUN[@]} -eq 0 ]]; then
     info "Preparing target directories in $TARGET_HOME..."
     mkdir -p \
+        "$TARGET_HOME/.config/DankMaterialShell" \
+        "$TARGET_HOME/.config/environment.d" \
+        "$TARGET_HOME/.config/hypr/dms" \
         "$TARGET_HOME/.config/systemd/user" \
         "$TARGET_HOME/.config/zsh" \
         "$TARGET_HOME/.local/bin" \

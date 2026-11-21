@@ -1,0 +1,4 @@
+# Runtime state and installed DMS plugins
+(^|/)\.firstlaunch$
+(^|/)\.changelog-
+(^|/)plugins(/|$)
